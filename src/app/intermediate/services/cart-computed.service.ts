@@ -12,6 +12,8 @@ export class CartComputedService {
   private sortOrder = signal<'asc' | 'desc'>('asc');
 
   // TODO: Create readonly signals for external access
+  // HINT: Use asReadonly() to expose signals that cannot be modified from outside
+  // LEARNING: This protects your internal state while allowing components to read values
   public readonly cartItems = this.items.asReadonly();
   public readonly currentCategory = this.selectedCategory.asReadonly();
   public readonly currentSearch = this.searchQuery.asReadonly();
