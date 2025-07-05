@@ -1,0 +1,278 @@
+<div class="cart-container">
+  <header class="cart-header">
+    <h1>Shopping Cart - Intermediate Level (Signals + Computed)</h1>
+    <div class="cart-stats">
+      <div class="stat-item">
+        <span class="stat-label">Items:</span>
+        <span class="stat-value">{{ cartService.cartSummary().totalItems }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Total:</span>
+        <span class="stat-value">${{ cartService.cartSummary().finalPrice.toFixed(2) }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Control Panel -->
+  <div class="control-panel">
+    <div class="filters">
+      <div class="filter-group">
+        <label>Category:</label>
+        <select (change)="onCategoryChange($any($event.target).value)">
+          @for (category of getUniqueCategories(); track category) {
+            <option [value]="category">
+              {{ category | titlecase }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Search:</label>
+        <input
+          type="text"
+          placeholder="Search items..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label>Sort by Price:</label>
+        <select (change)="onSortChange($any($event.target).value)">
+          <option value="asc">Low to High</option>
+          <option value="desc">High to Low</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button
+        class="btn btn-secondary"
+        [disabled]="!canRestorePreviousCart()"
+        (click)="onRestorePreviousCart()"
+      >
+        Restore Previous Cart
+      </button>
+      <button class="btn btn-outline" (click)="onClearCart()">
+        Clear Cart
+      </button>
+    </div>
+  </div>
+
+  <div class="cart-content">
+    <!-- Products Section -->
+    <section class="products-section">
+      <h2>Available Products</h2>
+      <div class="products-grid">
+        @for (product of products$ | async; track trackByProductId($index, product)) {
+          <div
+            class="product-card"
+            (click)="onViewProduct(product)"
+          >
+          <img [src]="product.image" [alt]="product.name" />
+          <div class="product-info">
+            <h3>{{ product.name }}</h3>
+            <p class="product-description">{{ product.description }}</p>
+            <div class="product-price">
+              <span class="price">${{ product.price }}</span>
+              @if (product.discount) {
+                <span class="discount">
+                  -{{ product.discount }}%
+                </span>
+              }
+            </div>
+            <div class="product-actions">
+              <button
+                class="btn btn-primary"
+                [disabled]="!product.inStock"
+                (click)="onAddToCart(product); $event.stopPropagation()"
+              >
+                Add to Cart
+              </button>
+              <button
+                class="btn btn-wishlist"
+                [class.active]="isInWishlist(product.id)"
+                (click)="isInWishlist(product.id) ? onRemoveFromWishlist(product.id) : onAddToWishlist(product.id); $event.stopPropagation()"
+              >
+                ♥
+              </button>
+            </div>
+          </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Cart and Analytics Section -->
+    <section class="cart-section">
+      <h2>Cart Items</h2>
+
+      <!-- Filtered Cart Items -->
+      @if (cartService.filteredItems().length === 0) {
+        <div class="empty-cart">
+          <p>No items match your current filters</p>
+        </div>
+      }
+
+      @if (cartService.filteredItems().length > 0) {
+        <div class="cart-items">
+          @for (item of cartService.filteredItems(); track trackByProductId($index, item)) {
+            <div class="cart-item">
+              <img [src]="item.image" [alt]="item.name" />
+              <div class="item-info">
+                <h4>{{ item.name }}</h4>
+                <p class="item-category">{{ item.category }}</p>
+                <p class="item-price">${{ item.price }}</p>
+              </div>
+              <div class="quantity-controls">
+                <button
+                  class="btn btn-secondary"
+                  (click)="decrementQuantity(item.productId, item.quantity)"
+                >
+                  -
+                </button>
+                <span class="quantity">{{ item.quantity }}</span>
+                <button
+                  class="btn btn-secondary"
+                  (click)="incrementQuantity(item.productId, item.quantity)"
+                >
+                  +
+                </button>
+              </div>
+              <div class="item-total">
+                ${{ (item.price * item.quantity).toFixed(2) }}
+              </div>
+              <button
+                class="btn btn-danger"
+                (click)="onRemoveFromCart(item.productId)"
+              >
+                Remove
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Cart Summary -->
+      @if (cartService.cartItems().length > 0) {
+        <div class="cart-summary">
+          <div class="summary-content">
+            <h3>Advanced Cart Summary</h3>
+          <div class="summary-line">
+            <span>Total Items:</span>
+            <span>{{ cartService.cartSummary().totalItems }}</span>
+          </div>
+          <div class="summary-line">
+            <span>Subtotal:</span>
+            <span>${{ cartService.cartSummary().totalPrice.toFixed(2) }}</span>
+          </div>
+          <div class="summary-line" *ngIf="cartService.cartSummary().totalDiscount > 0">
+            <span>Discount:</span>
+            <span class="discount">-${{ cartService.cartSummary().totalDiscount.toFixed(2) }}</span>
+          </div>
+          <div class="summary-line">
+            <span>Tax:</span>
+            <span>${{ cartService.cartSummary().tax.toFixed(2) }}</span>
+          </div>
+          <div class="summary-line total">
+            <span>Total:</span>
+            <span>${{ cartService.cartSummary().finalPrice.toFixed(2) }}</span>
+          </div>
+
+          <!-- Shipping Info -->
+          <div class="shipping-info">
+            <h4>Shipping Information</h4>
+            <div class="shipping-line">
+              <span>Shipping Cost:</span>
+              <span [class.free]="cartService.shippingInfo().isFreeShipping">
+                {{ cartService.shippingInfo().isFreeShipping ? 'FREE' : '$' + cartService.shippingInfo().shippingCost }}
+              </span>
+            </div>
+            @if (!cartService.shippingInfo().isFreeShipping) {
+              <div class="shipping-line">
+                <span>For free shipping, add:</span>
+                <span>${{ cartService.shippingInfo().amountForFreeShipping.toFixed(2) }}</span>
+              </div>
+            }
+            <div class="shipping-line">
+              <span>Estimated Delivery:</span>
+              <span>{{ cartService.shippingInfo().estimatedDelivery }}</span>
+            </div>
+          </div>
+          </div>
+        </div>
+      }
+
+      <!-- Category Statistics -->
+      @if (cartService.categoryStats().length > 0) {
+        <div class="category-stats">
+          <h3>Category Breakdown</h3>
+          <div class="stats-grid">
+            @for (stat of cartService.categoryStats(); track stat.category) {
+              <div class="stat-card">
+                <div class="stat-category">{{ stat.category | titlecase }}</div>
+                <div class="stat-count">{{ stat.itemCount }} items</div>
+                <div class="stat-value">${{ stat.totalValue.toFixed(2) }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (cartService.discountInfo().hasDiscounts) {
+        <div class="discount-info">
+          <h3>Discount Details</h3>
+          <div class="discount-stats">
+            <div class="discount-stat">
+              <span>Discounted Items:</span>
+              <span>{{ cartService.discountInfo().discountedItemsCount }}</span>
+            </div>
+            <div class="discount-stat">
+              <span>Total Savings:</span>
+              <span class="savings">${{ cartService.discountInfo().totalSavings.toFixed(2) }}</span>
+            </div>
+            <div class="discount-stat">
+              <span>Average Discount:</span>
+              <span>{{ cartService.discountInfo().averageDiscount.toFixed(1) }}%</span>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+
+  <!-- Recently Viewed -->
+  @if (effectsService.recentlyViewedItems().length > 0) {
+    <section class="recently-viewed">
+      <h2>Recently Viewed</h2>
+      <div class="recently-viewed-list">
+        @for (product of effectsService.recentlyViewedItems().slice(0, 5); track product.id) {
+          <div class="recently-viewed-item">
+            <img [src]="product.image" [alt]="product.name" />
+            <span>{{ product.name }}</span>
+            <span class="price">${{ product.price }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  @if (effectsService.wishlistItems().length > 0) {
+    <section class="wishlist">
+      <h2>Wishlist ({{ effectsService.wishlistItems().length }} items)</h2>
+      <div class="wishlist-items">
+        @for (productId of effectsService.wishlistItems(); track productId) {
+          <div class="wishlist-item">
+            Product ID: {{ productId }}
+            <button
+              class="btn btn-small btn-danger"
+              (click)="onRemoveFromWishlist(productId)"
+            >
+              Remove
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

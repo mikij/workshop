@@ -1,0 +1,132 @@
+<div class="cart-container">
+  <header class="cart-header">
+    <h1>Shopping Cart - Basic Level (RxJS)</h1>
+    <div class="cart-badge">
+      <span class="badge">{{ totalItems$ | async }}</span>
+    </div>
+  </header>
+
+  <div class="cart-content">
+    <!-- Products Section -->
+    <section class="products-section">
+      <h2>Available Products</h2>
+      <div class="products-grid">
+        @for (product of products$ | async; track trackByProductId($index, product)) {
+          <div class="product-card">
+          <img [src]="product.image" [alt]="product.name" />
+          <div class="product-info">
+            <h3>{{ product.name }}</h3>
+            <p class="product-description">{{ product.description }}</p>
+            <div class="product-price">
+              <span class="price">${{ product.price }}</span>
+              @if (product.discount) {
+                <span class="discount">
+                  -{{ product.discount }}%
+                </span>
+              }
+            </div>
+            <div class="product-actions">
+              <button
+                class="btn btn-primary"
+                [disabled]="!product.inStock"
+                (click)="onAddToCart(product)"
+              >
+                {{ product.inStock ? 'Add to Cart' : 'Out of Stock' }}
+              </button>
+            </div>
+          </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Cart Items Section -->
+    <section class="cart-section">
+      <h2>Cart Items</h2>
+
+      @if ((cartItems$ | async)?.length === 0) {
+        <div class="empty-cart">
+          <p>Your cart is empty</p>
+        </div>
+      }
+
+      @if ((cartItems$ | async)?.length! > 0) {
+        <div class="cart-items">
+          @for (item of cartItems$ | async; track trackByCartItemId($index, item)) {
+            <div class="cart-item">
+              <img [src]="item.image" [alt]="item.name" />
+              <div class="item-info">
+                <h4>{{ item.name }}</h4>
+                <p class="item-category">{{ item.category }}</p>
+                <p class="item-price">${{ item.price }}</p>
+              </div>
+              <div class="quantity-controls">
+                <button
+                  class="btn btn-secondary"
+                  (click)="decrementQuantity(item.productId, item.quantity)"
+                >
+                  -
+                </button>
+                <span class="quantity">{{ item.quantity }}</span>
+                <button
+                  class="btn btn-secondary"
+                  (click)="incrementQuantity(item.productId, item.quantity)"
+                >
+                  +
+                </button>
+              </div>
+              <div class="item-total">
+                ${{ (item.price * item.quantity).toFixed(2) }}
+              </div>
+              <button
+                class="btn btn-danger"
+                (click)="onRemoveFromCart(item.productId)"
+              >
+                Remove
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Cart Summary -->
+      @if ((cartItems$ | async)?.length! > 0) {
+        <div class="cart-summary">
+          @if (cartSummary$ | async; as summary) {
+          <div class="summary-content">
+            <h3>Order Summary</h3>
+            <div class="summary-line">
+              <span>Total Items:</span>
+              <span>{{ summary.totalItems }}</span>
+            </div>
+            <div class="summary-line">
+              <span>Subtotal:</span>
+              <span>${{ summary.totalPrice.toFixed(2) }}</span>
+            </div>
+            @if (summary.totalDiscount > 0) {
+              <div class="summary-line">
+                <span>Discount:</span>
+                <span class="discount">-${{ summary.totalDiscount.toFixed(2) }}</span>
+              </div>
+            }
+            <div class="summary-line">
+              <span>Tax:</span>
+              <span>${{ summary.tax.toFixed(2) }}</span>
+            </div>
+            <div class="summary-line total">
+              <span>Total:</span>
+              <span>${{ summary.finalPrice.toFixed(2) }}</span>
+            </div>
+            <div class="cart-actions">
+              <button class="btn btn-outline" (click)="onClearCart()">
+                Clear Cart
+              </button>
+              <button class="btn btn-primary">Checkout</button>
+            </div>
+          </div>
+        }
+        </div>
+      }
+    </section>
+  </div>
+</div>

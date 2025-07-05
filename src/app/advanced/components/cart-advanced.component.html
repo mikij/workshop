@@ -1,0 +1,560 @@
+<div class="advanced-cart-container">
+  <!-- Header with advanced controls -->
+  <header class="advanced-header">
+    <div class="header-main">
+      <h1>Shopping Cart - Advanced Level (Resource API + Advanced Signals)</h1>
+      <div class="header-stats">
+        <div class="stat-card">
+          <span class="stat-label">Items</span>
+          <span class="stat-value">{{ cartService.cartSummary().totalItems }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total</span>
+          <span class="stat-value">{{ formatCurrency(cartService.cartSummary().finalPrice) }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Session</span>
+          <span class="stat-value">{{ formatDuration(cartService.cartMetrics().sessionDurationMinutes) }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="header-controls">
+      <button class="btn btn-outline" (click)="toggleFilters()" 
+              aria-label="Toggle product filters panel" 
+              [attr.aria-expanded]="showFilters()">
+        {{ showFilters() ? 'Hide' : 'Show' }} Filters
+      </button>
+      <button class="btn btn-outline" (click)="toggleAnalytics()" 
+              aria-label="Toggle analytics panel" 
+              [attr.aria-expanded]="showAnalytics()">
+        {{ showAnalytics() ? 'Hide' : 'Show' }} Analytics
+      </button>
+      <button class="btn btn-outline" (click)="toggleHistory()" 
+              aria-label="Toggle cart history panel" 
+              [attr.aria-expanded]="showHistory()">
+        {{ showHistory() ? 'Hide' : 'Show' }} History
+      </button>
+      <button class="btn btn-secondary" (click)="onTriggerSync()">
+        Sync Cart
+      </button>
+    </div>
+  </header>
+
+  <!-- Advanced Filters Panel -->
+  @if (showFilters()) {
+    <div class="filters-panel">
+      <div class="filters-grid">
+      <div class="filter-section">
+        <h3>Search & Category</h3>
+        <div class="filter-group">
+          <label>Search Products:</label>
+          <div class="search-input">
+            <input 
+              type="text" 
+              placeholder="Search by name, description, or tags..."
+              [(ngModel)]="searchQuery"
+              (input)="onSearchProducts()"
+            />
+          </div>
+        </div>
+        
+        <div class="filter-group">
+          <label>Category:</label>
+          <select (change)="onFilterByCategory($any($event.target).value)">
+            @for (category of getAvailableCategories(); track category) {
+              <option [value]="category">
+                {{ category | titlecase }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h3>Price Range</h3>
+        <div class="price-range">
+          <div class="price-input">
+            <label>Min:</label>
+            <input 
+              type="number" 
+              [(ngModel)]="priceMin"
+              (change)="onFilterByPriceRange()"
+              min="0"
+            />
+          </div>
+          <div class="price-input">
+            <label>Max:</label>
+            <input 
+              type="number" 
+              [(ngModel)]="priceMax"
+              (change)="onFilterByPriceRange()"
+              min="0"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h3>Sorting & Display</h3>
+        <div class="filter-group">
+          <label>Sort by:</label>
+          <select (change)="onSortProducts($any($event.target).value.split(':')[0], $any($event.target).value.split(':')[1])">
+            @for (option of getSortOptions(); track option.sortBy + ':' + option.order) {
+              <option [value]="option.sortBy + ':' + option.order">
+                {{ option.label }}
+              </option>
+            }
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>Items per page:</label>
+          <select (change)="onItemsPerPageChange(+$any($event.target).value)">
+            @for (count of getItemsPerPageOptions(); track count) {
+              <option [value]="count">
+                {{ count }} items
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h3>Actions</h3>
+        <div class="filter-actions">
+          <button class="btn btn-secondary" (click)="onResetFilters()">
+            Reset Filters
+          </button>
+        </div>
+      </div>
+    </div>
+    </div>
+  }
+
+  <!-- Products Section with Resource Loading -->
+  <section class="products-section">
+    <h2>Products</h2>
+    
+    <!-- Loading State -->
+    @if (productService.productsResource.isLoading()) {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading products...</p>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (productService.productsResource.error()) {
+      <div class="error-state">
+        <p>Error loading products: {{ productService.productsResource.error() }}</p>
+        <button class="btn btn-primary" (click)="productService.productsResource.reload()">
+          Retry
+        </button>
+      </div>
+    }
+
+    <!-- Products Grid -->
+    @if (productService.productsResource.value(); as productsData) {
+      <div class="products-content">
+        <div class="products-grid">
+        @for (product of productsData.products; track trackByProductId($index, product)) {
+          <div
+            class="advanced-product-card"
+            (click)="onSelectProduct(product.id)"
+          >
+          <div class="product-image">
+            <img [src]="product.image" [alt]="product.name" loading="lazy" />
+            <div class="product-overlay">
+              <button 
+                class="btn btn-primary btn-small"
+                (click)="onAddToCart(product, 1); $event.stopPropagation()"
+                [attr.aria-label]="'Quick add ' + product.name + ' to cart'"
+              >
+                Quick Add
+              </button>
+            </div>
+          </div>
+          
+          <div class="product-details">
+            <h3>{{ product.name }}</h3>
+            <p class="product-description">{{ product.description }}</p>
+            
+            <div class="product-meta">
+              <span class="category-tag">{{ product.category }}</span>
+              <span class="rating">★ {{ product.rating }}</span>
+            </div>
+            
+            <div class="product-pricing">
+              <span class="price">{{ formatCurrency(product.price) }}</span>
+              @if (product.discount) {
+                <span class="discount-badge">
+                  -{{ product.discount }}%
+                </span>
+              }
+            </div>
+            
+            <div class="product-actions">
+              <div class="quantity-selector">
+                <label>Qty:</label>
+                <select #qtySelect>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                </select>
+              </div>
+              <button 
+                class="btn btn-primary"
+                [disabled]="!product.inStock"
+                (click)="onAddToCart(product, +qtySelect.value); $event.stopPropagation()"
+                [attr.aria-label]="'Add ' + product.name + ' to cart'"
+              >
+                {{ product.inStock ? 'Add to Cart' : 'Out of Stock' }}
+              </button>
+            </div>
+          </div>
+          </div>
+        }
+        </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <button 
+          class="btn btn-outline"
+          [disabled]="productService.getCurrentFilters().page === 1"
+          (click)="onPageChange(productService.getCurrentFilters().page - 1)"
+        >
+          Previous
+        </button>
+        
+        <div class="page-numbers">
+          @for (page of getPageNumbers(); track page) {
+            <button
+              class="btn"
+              [class.btn-primary]="page === productService.getCurrentFilters().page"
+              [class.btn-outline]="page !== productService.getCurrentFilters().page"
+              (click)="onPageChange(page)"
+            >
+              {{ page }}
+            </button>
+          }
+        </div>
+        
+        <button 
+          class="btn btn-outline"
+          [disabled]="productService.getCurrentFilters().page === getTotalPages()"
+          (click)="onPageChange(productService.getCurrentFilters().page + 1)"
+        >
+          Next
+        </button>
+      </div>
+      </div>
+    }
+  </section>
+
+  <!-- Cart Management Section -->
+  <section class="cart-management">
+    <div class="cart-header-section">
+      <h2>Cart Management</h2>
+      <div class="cart-actions">
+        <button class="btn btn-outline" (click)="onUndoLastChange()">
+          Undo Last Change
+        </button>
+        <button class="btn btn-outline" (click)="onOptimizeCart()">
+          Optimize Cart
+        </button>
+        <button class="btn btn-outline" (click)="onClearCart()">
+          Clear Cart
+        </button>
+      </div>
+    </div>
+
+    <!-- Bulk Operations -->
+    <div class="bulk-operations">
+      <h3>Bulk Operations</h3>
+      <div class="bulk-discount">
+        <select [(ngModel)]="bulkDiscountCategory">
+          <option value="all">All Categories</option>
+          @for (category of getAvailableCategories().slice(1); track category) {
+            <option [value]="category">
+              {{ category | titlecase }}
+            </option>
+          }
+        </select>
+        <input 
+          type="number" 
+          [(ngModel)]="bulkDiscountPercent"
+          min="0" 
+          max="50"
+          placeholder="Discount %"
+        />
+        <button class="btn btn-secondary" (click)="onApplyBulkDiscount()">
+          Apply Discount
+        </button>
+      </div>
+    </div>
+
+    <!-- Cart Items -->
+    <div class="cart-items-section">
+      @if (cartService.cartItems().length === 0) {
+        <div class="empty-cart">
+          <h3>Your cart is empty</h3>
+          <p>Add some products to get started!</p>
+        </div>
+      }
+
+      @if (cartService.cartItems().length > 0) {
+        <div class="cart-items-grid">
+          @for (item of cartService.cartItems(); track trackByProductId($index, item)) {
+            <div class="advanced-cart-item">
+          <img [src]="item.image" [alt]="item.name" />
+          
+          <div class="item-details">
+            <h4>{{ item.name }}</h4>
+            <p class="item-category">{{ item.category | titlecase }}</p>
+            <p class="item-unit-price">{{ formatCurrency(item.price) }} each</p>
+          </div>
+          
+          <div class="item-controls">
+            <div class="quantity-control">
+              <button 
+                class="btn btn-small"
+                (click)="onUpdateQuantity(item.productId, item.quantity - 1)"
+                [attr.aria-label]="'Decrease quantity of ' + item.name"
+              >
+                -
+              </button>
+              <span class="quantity-display">{{ item.quantity }}</span>
+              <button 
+                class="btn btn-small"
+                (click)="onUpdateQuantity(item.productId, item.quantity + 1)"
+                [attr.aria-label]="'Increase quantity of ' + item.name"
+              >
+                +
+              </button>
+            </div>
+            
+            <div class="item-total">
+              {{ formatCurrency(item.price * item.quantity) }}
+            </div>
+          </div>
+          
+          <div class="item-actions">
+            <button 
+              class="btn btn-outline btn-small"
+              (click)="onDuplicateItem(item.productId)"
+              [attr.aria-label]="'Duplicate ' + item.name"
+              title="Duplicate item"
+            >
+              <span aria-hidden="true">⧢</span>
+            </button>
+            <button 
+              class="btn btn-outline btn-small"
+              (click)="onMoveToWishlist(item.productId)"
+              [attr.aria-label]="'Move ' + item.name + ' to wishlist'"
+              title="Move to wishlist"
+            >
+              <span aria-hidden="true">♡</span>
+            </button>
+            <button 
+              class="btn btn-danger btn-small"
+              (click)="onRemoveFromCart(item.productId)"
+              [attr.aria-label]="'Remove ' + item.name + ' from cart'"
+              title="Remove item"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          </div>
+            </div>
+        }
+        </div>
+      }
+    </div>
+
+    <!-- Enhanced Cart Summary -->
+    @if (cartService.cartItems().length > 0) {
+      <div class="enhanced-cart-summary">
+        <div class="summary-sections">
+        <div class="summary-main">
+          <h3>Order Summary</h3>
+          <div class="summary-line">
+            <span>Items ({{ cartService.cartSummary().totalItems }}):</span>
+            <span>{{ formatCurrency(cartService.cartSummary().totalPrice) }}</span>
+          </div>
+          @if (cartService.cartSummary().totalDiscount > 0) {
+            <div class="summary-line">
+              <span>Discounts:</span>
+              <span class="discount">-{{ formatCurrency(cartService.cartSummary().totalDiscount) }}</span>
+            </div>
+          }
+          <div class="summary-line">
+            <span>Tax:</span>
+            <span>{{ formatCurrency(cartService.cartSummary().tax) }}</span>
+          </div>
+          <div class="summary-line total-line">
+            <span>Total:</span>
+            <span>{{ formatCurrency(cartService.cartSummary().finalPrice) }}</span>
+          </div>
+        </div>
+
+        <div class="summary-meta">
+          <h4>Cart Metrics</h4>
+          <div class="metrics-grid">
+            <div class="metric">
+              <span class="metric-label">Categories:</span>
+              <span class="metric-value">{{ cartService.cartMetrics().uniqueCategories }}</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Avg. Price:</span>
+              <span class="metric-value">{{ formatCurrency(cartService.cartMetrics().averageItemPrice) }}</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Cart Version:</span>
+              <span class="metric-value">{{ cartService.cartMetrics().cartVersion }}</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Last Modified:</span>
+              <span class="metric-value">{{ formatDate(cartService.cartMetrics().lastModified) }}</span>
+            </div>
+          </div>
+        </div>
+        </div>
+
+      <div class="summary-actions">
+        <button class="btn btn-secondary" (click)="onExportCart()">
+          Export Cart
+        </button>
+        <input 
+          type="file" 
+          accept=".json"
+          (change)="onImportCart($event)"
+          #fileInput
+          style="display: none"
+        />
+        <button class="btn btn-secondary" (click)="fileInput.click()">
+          Import Cart
+        </button>
+        <button class="btn btn-primary btn-large">
+          Proceed to Checkout
+        </button>
+      </div>
+      </div>
+    }
+  </section>
+
+  <!-- Analytics Panel -->
+  @if (showAnalytics()) {
+    <section class="analytics-panel">
+    <h2>Cart Analytics</h2>
+    <div class="analytics-grid">
+      <div class="analytics-card">
+        <h3>Session Stats</h3>
+        <div class="stat-item">
+          <span>Total Sessions:</span>
+          <span>{{ cartService.cartAnalytics().totalSessions }}</span>
+        </div>
+        <div class="stat-item">
+          <span>Avg. Session Value:</span>
+          <span>{{ formatCurrency(cartService.cartAnalytics().averageSessionValue) }}</span>
+        </div>
+        <div class="stat-item">
+          <span>Abandonment Rate:</span>
+          <span>{{ cartService.cartAnalytics().abandonmentRate.toFixed(1) }}%</span>
+        </div>
+      </div>
+
+      <div class="analytics-card">
+        <h3>Top Categories</h3>
+        <div class="category-list">
+          @for (category of cartService.cartAnalytics().topCategories; track category.category) {
+            <div class="category-item">
+              <span>{{ category.category | titlecase }}</span>
+              <span class="category-count">{{ category.count }} items</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="analytics-card">
+        <h3>Performance</h3>
+        <div class="stat-item">
+          <span>Session Duration:</span>
+          <span>{{ formatDuration(cartService.cartMetrics().sessionDurationMinutes) }}</span>
+        </div>
+        <div class="stat-item">
+          <span>Value per Minute:</span>
+          <span>{{ formatCurrency(cartService.cartMetrics().cartValuePerMinute) }}</span>
+        </div>
+      </div>
+    </div>
+    </section>
+  }
+
+  <!-- History Panel -->
+  @if (showHistory()) {
+    <section class="history-panel">
+    <h2>Cart History</h2>
+    <div class="history-actions">
+      <button class="btn btn-secondary" (click)="onResetSession()">
+        Reset Session
+      </button>
+    </div>
+    <div class="history-list">
+      @for (state of cartService.getCartHistory(); track trackByIndex($index); let i = $index) {
+        <div
+          class="history-item"
+          (click)="onRestoreFromHistory(i)"
+        >
+        <div class="history-info">
+          <span class="history-version">Version {{ state.version }}</span>
+          <span class="history-date">{{ formatDate(state.lastUpdated) }}</span>
+        </div>
+        <div class="history-summary">
+          <span>{{ state.items.length }} items</span>
+          <span>{{ formatCurrency(calculateHistoryTotal(state.items)) }}</span>
+        </div>
+        </div>
+      }
+    </div>
+    </section>
+  }
+
+  <!-- Recommendations -->
+  @if (productService.recommendationsResource.value()?.length) {
+    <section class="recommendations">
+    <h2>Recommended Products</h2>
+    <div class="recommendations-grid">
+      @for (product of productService.recommendationsResource.value(); track trackByProductId($index, product)) {
+        <div class="recommendation-card">
+        <img [src]="product.image" [alt]="product.name" />
+        <div class="recommendation-info">
+          <h4>{{ product.name }}</h4>
+          <span class="price">{{ formatCurrency(product.price) }}</span>
+          <button 
+            class="btn btn-small btn-primary"
+            (click)="onAddToCart(product)"
+          >
+            Add to Cart
+          </button>
+        </div>
+        </div>
+      }
+    </div>
+    </section>
+  }
+
+  <!-- Sync Status -->
+  @if (cartService.cartSyncResource.value(); as syncResult) {
+    <div class="sync-status">
+    <div 
+      class="sync-message"
+      [class.success]="syncResult.success"
+      [class.error]="!syncResult.success"
+    >
+      {{ syncResult.message }}
+    </div>
+    </div>
+  }
+</div>
