@@ -309,36 +309,38 @@
         <div class="cart-items-grid">
           @for (item of cartService.cartItems(); track trackByProductId($index, item)) {
             <div class="advanced-cart-item">
-          <img [src]="item.image" [alt]="item.name" />
+          <img [src]="item.image" [alt]="item.name" class="item-image" />
           
-          <div class="item-details">
-            <h4>{{ item.name }}</h4>
-            <p class="item-category">{{ item.category | titlecase }}</p>
-            <p class="item-unit-price">{{ formatCurrency(item.price) }} each</p>
-          </div>
-          
-          <div class="item-controls">
-            <div class="quantity-control">
-              <button 
-                class="quantity-btn quantity-btn-decrease"
-                (click)="onUpdateQuantity(item.productId, item.quantity - 1)"
-                [attr.aria-label]="'Decrease quantity of ' + item.name"
-                [disabled]="item.quantity <= 1"
-              >
-                −
-              </button>
-              <span class="quantity-display">{{ item.quantity }}</span>
-              <button 
-                class="quantity-btn quantity-btn-increase"
-                (click)="onUpdateQuantity(item.productId, item.quantity + 1)"
-                [attr.aria-label]="'Increase quantity of ' + item.name"
-              >
-                +
-              </button>
+          <div class="item-details-section">
+            <div class="item-info">
+              <h4>{{ item.name }}</h4>
+              <p class="item-category">{{ item.category | titlecase }}</p>
+              <p class="item-unit-price">{{ formatCurrency(item.price) }} each</p>
             </div>
             
-            <div class="item-total">
-              {{ formatCurrency(item.price * item.quantity) }}
+            <div class="item-controls">
+              <div class="quantity-control">
+                <button 
+                  class="quantity-btn quantity-btn-decrease"
+                  (click)="onUpdateQuantity(item.productId, item.quantity - 1)"
+                  [attr.aria-label]="'Decrease quantity of ' + item.name"
+                  [disabled]="item.quantity <= 1"
+                >
+                  −
+                </button>
+                <span class="quantity-display">{{ item.quantity }}</span>
+                <button 
+                  class="quantity-btn quantity-btn-increase"
+                  (click)="onUpdateQuantity(item.productId, item.quantity + 1)"
+                  [attr.aria-label]="'Increase quantity of ' + item.name"
+                >
+                  +
+                </button>
+              </div>
+              
+              <div class="item-total">
+                {{ formatCurrency(item.price * item.quantity) }}
+              </div>
             </div>
           </div>
           

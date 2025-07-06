@@ -118,39 +118,51 @@
         <div class="cart-items">
           @for (item of cartService.filteredItems(); track trackByProductId($index, item)) {
             <div class="cart-item">
-              <img [src]="item.image" [alt]="item.name" />
-              <div class="item-info">
-                <h4>{{ item.name }}</h4>
-                <p class="item-category">{{ item.category }}</p>
-                <p class="item-price">${{ item.price }}</p>
+              <img [src]="item.image" [alt]="item.name" class="item-image" />
+              
+              <div class="item-details-section">
+                <div class="item-info">
+                  <h4>{{ item.name }}</h4>
+                  <p class="item-category">{{ item.category }}</p>
+                  <p class="item-price">${{ item.price }} each</p>
+                </div>
+                
+                <div class="item-controls">
+                  <div class="quantity-controls">
+                    <button
+                      class="quantity-btn quantity-btn-decrease"
+                      (click)="decrementQuantity(item.productId, item.quantity)"
+                      [attr.aria-label]="'Decrease quantity of ' + item.name"
+                      [disabled]="item.quantity <= 1"
+                    >
+                      −
+                    </button>
+                    <span class="quantity">{{ item.quantity }}</span>
+                    <button
+                      class="quantity-btn quantity-btn-increase"
+                      (click)="incrementQuantity(item.productId, item.quantity)"
+                      [attr.aria-label]="'Increase quantity of ' + item.name"
+                    >
+                      +
+                    </button>
+                  </div>
+                  
+                  <div class="item-total">
+                    ${{ (item.price * item.quantity).toFixed(2) }}
+                  </div>
+                </div>
               </div>
-              <div class="quantity-controls">
+              
+              <div class="item-actions">
                 <button
-                  class="quantity-btn quantity-btn-decrease"
-                  (click)="decrementQuantity(item.productId, item.quantity)"
-                  [attr.aria-label]="'Decrease quantity of ' + item.name"
-                  [disabled]="item.quantity <= 1"
+                  class="btn btn-danger btn-small"
+                  (click)="onRemoveFromCart(item.productId)"
+                  [attr.aria-label]="'Remove ' + item.name + ' from cart'"
+                  title="Remove item"
                 >
-                  −
-                </button>
-                <span class="quantity">{{ item.quantity }}</span>
-                <button
-                  class="quantity-btn quantity-btn-increase"
-                  (click)="incrementQuantity(item.productId, item.quantity)"
-                  [attr.aria-label]="'Increase quantity of ' + item.name"
-                >
-                  +
+                  <span aria-hidden="true">✕</span>
                 </button>
               </div>
-              <div class="item-total">
-                ${{ (item.price * item.quantity).toFixed(2) }}
-              </div>
-              <button
-                class="btn btn-danger"
-                (click)="onRemoveFromCart(item.productId)"
-              >
-                Remove
-              </button>
             </div>
           }
         </div>
