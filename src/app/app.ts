@@ -32,6 +32,27 @@ export class App {
       description: 'Resource API + Advanced Patterns',
       difficulty: 'Advanced',
       topics: ['Resource API', 'Advanced Signals', 'Performance', 'Analytics']
+    },
+    { 
+      path: '/control-flow', 
+      name: 'Control Flow', 
+      description: 'Modern Template Syntax',
+      difficulty: 'Intermediate',
+      topics: ['@if', '@for', '@switch', '@defer']
+    },
+    { 
+      path: '/standalone', 
+      name: 'Standalone', 
+      description: 'Module-Free Architecture',
+      difficulty: 'Intermediate',
+      topics: ['Standalone Components', 'Lazy Loading', 'Migration']
+    },
+    { 
+      path: '/inject', 
+      name: 'Modern DI', 
+      description: 'inject() Patterns',
+      difficulty: 'Advanced',
+      topics: ['inject()', 'Provider Functions', 'Testing', 'Composition']
     }
   ];
 }

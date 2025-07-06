@@ -22,6 +22,21 @@ export const routes: Routes = [
     title: 'Shopping Cart - Advanced Level (Resource API)'
   },
   {
+    path: 'control-flow',
+    loadChildren: () => import('./control-flow/control-flow.routes').then(m => m.CONTROL_FLOW_ROUTES),
+    title: 'Control Flow - Modern Template Syntax (@if, @for, @switch, @defer)'
+  },
+  {
+    path: 'standalone',
+    loadChildren: () => import('./standalone/standalone.routes').then(m => m.STANDALONE_ROUTES),
+    title: 'Standalone Components - Module-Free Architecture'
+  },
+  {
+    path: 'inject',
+    loadChildren: () => import('./inject/inject.routes').then(m => m.INJECT_ROUTES),
+    title: 'Modern DI - inject() Patterns and Advanced Providers'
+  },
+  {
     path: '**',
     redirectTo: '/basic'
   }

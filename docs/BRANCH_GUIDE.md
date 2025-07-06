@@ -417,6 +417,30 @@ for branch in "${BRANCHES[@]}"; do
 done
 ```
 
+## 🆕 New Workshop Modules
+
+### Recently Added Modules
+
+The workshop has been expanded with three new topic-based modules that complement the existing progressive learning path:
+
+**Topic-Based Learning Modules:**
+- **Control Flow** (`docs/CONTROL_FLOW.md`) - Modern Angular template syntax (@if, @for, @switch, @defer)
+- **Standalone Components** (`docs/STANDALONE.md`) - Module-free architecture and modern routing
+- **Modern DI with inject()** (`docs/INJECT.md`) - Advanced dependency injection patterns
+
+**Module Integration:**
+- All new modules are included across all four branches (workshop-starter, workshop-complete, production-ready, main)
+- Each module has its own directory structure: `src/app/{control-flow,standalone,inject}/`
+- Routes are configured for lazy loading: `/control-flow`, `/standalone`, `/inject`
+- Documentation follows the same comprehensive format as existing levels
+
+**Branch Consistency:**
+All new modules maintain the same branch philosophy:
+- `workshop-starter`: TODO comments and skeleton implementations
+- `workshop-complete`: Full solutions with educational comments
+- `production-ready`: Enterprise-grade implementations with optimization
+- `main`: Polished final versions
+
 ## 📈 Future Considerations
 
 ### Scaling the Branch Strategy
