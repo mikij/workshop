@@ -55,14 +55,44 @@ export class CartComputedService {
   //   return { totalItems, totalPrice, totalDiscount, tax, finalPrice };
   // });
   public readonly cartSummary = computed<CartSummary>(() => {
-    // TODO: Implement advanced cart summary calculation
-    // TEMPORARY: Return empty summary for compilation - students must implement proper calculations
+    // Get current items from signal - this creates a dependency
+    const items = this.items();
+    
+    // Calculate total items (sum of all quantities)
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Calculate total price (sum of price × quantity for each item)
+    const totalPrice = items.reduce((sum, item) => {
+      return sum + (item.price * item.quantity);
+    }, 0);
+    
+    // Calculate total discount (sum of discount amounts)
+    const totalDiscount = items.reduce((sum, item) => {
+      const discount = item.discount || 0;
+      return sum + (item.price * item.quantity * discount / 100);
+    }, 0);
+    
+    // Calculate progressive tax based on subtotal
+    const subtotal = totalPrice - totalDiscount;
+    let tax: number;
+    
+    if (subtotal > 1000) {
+      tax = subtotal * 0.12; // 12% for orders over $1000
+    } else if (subtotal > 500) {
+      tax = subtotal * 0.10; // 10% for orders over $500
+    } else {
+      tax = subtotal * 0.08; // 8% for orders under $500
+    }
+    
+    // Calculate final price
+    const finalPrice = subtotal + tax;
+    
     return {
-      totalItems: 0,
-      totalPrice: 0,
-      totalDiscount: 0,
-      tax: 0,
-      finalPrice: 0
+      totalItems,
+      totalPrice,
+      totalDiscount,
+      tax,
+      finalPrice
     };
   });
 
@@ -83,9 +113,36 @@ export class CartComputedService {
   // - Filter by search: items.filter(item => item.name.toLowerCase().includes(search))
   // - Sort by value: items.sort((a, b) => compare aValue and bValue)
   public readonly filteredItems = computed(() => {
-    // TODO: Implement filtering and sorting logic
-    // TEMPORARY: Return items as-is for basic functionality - students must implement proper filtering/sorting
-    return this.items();
+    // Get all dependencies - computed automatically tracks these
+    const items = this.items();
+    const category = this.selectedCategory();
+    const search = this.searchQuery().toLowerCase();
+    const sortOrder = this.sortOrder();
+    
+    // Start with all items
+    let filtered = items;
+    
+    // Filter by category if not 'all'
+    if (category !== 'all') {
+      filtered = filtered.filter(item => item.category === category);
+    }
+    
+    // Filter by search query (name or category)
+    if (search) {
+      filtered = filtered.filter(item => 
+        item.name.toLowerCase().includes(search) || 
+        item.category.toLowerCase().includes(search)
+      );
+    }
+    
+    // Sort by total value (price × quantity)
+    const sorted = filtered.sort((a, b) => {
+      const aValue = a.price * a.quantity;
+      const bValue = b.price * b.quantity;
+      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+    
+    return sorted;
   });
 
   // TODO: Implement computed for category statistics
@@ -104,12 +161,28 @@ export class CartComputedService {
   // - Iterate with items.forEach()
   // - Convert to array: Array.from(stats.entries()).map(...)
   public readonly categoryStats = computed(() => {
-    // TODO: Implement category statistics calculation
-    // TEMPORARY: Return basic stats structure for compilation - students must implement proper analysis
-    return [
-      { category: 'electronics', itemCount: 0, totalValue: 0 },
-      { category: 'clothing', itemCount: 0, totalValue: 0 }
-    ];
+    const items = this.items();
+    
+    // Use Map for efficient grouping
+    const stats = new Map<string, { count: number; total: number }>();
+    
+    // Group items by category and calculate stats
+    items.forEach(item => {
+      const existing = stats.get(item.category) || { count: 0, total: 0 };
+      stats.set(item.category, {
+        count: existing.count + item.quantity,
+        total: existing.total + (item.price * item.quantity)
+      });
+    });
+    
+    // Convert Map to array and return sorted by total value
+    return Array.from(stats.entries())
+      .map(([category, data]) => ({
+        category,
+        itemCount: data.count,
+        totalValue: data.total
+      }))
+      .sort((a, b) => b.totalValue - a.totalValue);
   });
 
   // TODO: Implement computed for discount information
@@ -128,13 +201,22 @@ export class CartComputedService {
   // - Use this.cartSummary().totalDiscount for total savings
   // - Calculate average: sum of discounts / number of discounted items
   public readonly discountInfo = computed(() => {
-    // TODO: Implement discount information calculation
-    // TEMPORARY: Return empty discount info for compilation - students must implement discount logic
+    const items = this.items();
+    const summary = this.cartSummary(); // Depend on other computed signal
+    
+    // Filter items that have discounts
+    const discountedItems = items.filter(item => item.discount && item.discount > 0);
+    
+    // Calculate average discount percentage
+    const averageDiscount = discountedItems.length > 0
+      ? discountedItems.reduce((sum, item) => sum + (item.discount || 0), 0) / discountedItems.length
+      : 0;
+    
     return {
-      hasDiscounts: false,
-      discountedItemsCount: 0,
-      totalSavings: 0,
-      averageDiscount: 0
+      hasDiscounts: discountedItems.length > 0,
+      discountedItemsCount: discountedItems.length,
+      totalSavings: summary.totalDiscount, // Use computed summary
+      averageDiscount
     };
   });
 
@@ -151,14 +233,21 @@ export class CartComputedService {
   // - Shipping cost: $0 if free, $15 if standard
   // - Amount for free shipping: Math.max(0, $500 - finalPrice)
   public readonly shippingInfo = computed(() => {
-    // TODO: Implement shipping calculation
-    // TEMPORARY: Return default shipping info for compilation - students must implement shipping logic
+    const summary = this.cartSummary();
+    const freeShippingThreshold = 500;
+    
+    // Determine if eligible for free shipping
+    const isEligible = summary.finalPrice >= freeShippingThreshold;
+    
+    // Calculate amount needed for free shipping
+    const amountForFreeShipping = Math.max(0, freeShippingThreshold - summary.finalPrice);
+    
     return {
-      isEligibleForFreeShipping: false,
-      isFreeShipping: false, // Template compatibility
-      shippingCost: 15,
-      amountForFreeShipping: 500,
-      estimatedDelivery: '5-7 business days'
+      isEligibleForFreeShipping: isEligible,
+      isFreeShipping: isEligible, // Template compatibility
+      shippingCost: isEligible ? 0 : 15,
+      amountForFreeShipping,
+      estimatedDelivery: isEligible ? '2-3 business days' : '5-7 business days'
     };
   });
 
@@ -172,12 +261,29 @@ export class CartComputedService {
   // - Use Set for unique values: [...new Set(items.map(...))]
   // - Filter for recommendations: categories.filter(cat => !inCart.includes(cat))
   public readonly recommendations = computed(() => {
-    // TODO: Implement recommendations calculation
-    // TEMPORARY: Return empty recommendations for compilation - students must implement recommendation logic
+    const items = this.items();
+    
+    // Available categories for recommendations
+    const allCategories = ['electronics', 'clothing', 'books', 'home', 'sports'];
+    
+    // Get unique categories currently in cart
+    const categoriesInCart = [...new Set(items.map(item => item.category))];
+    
+    // Suggest categories not in cart
+    const suggestedCategories = allCategories.filter(cat => !categoriesInCart.includes(cat));
+    
+    // Calculate total unique items
+    const totalUniqueItems = items.length;
+    
+    // Calculate average item price
+    const averageItemPrice = items.length > 0
+      ? items.reduce((sum, item) => sum + item.price, 0) / items.length
+      : 0;
+    
     return {
-      suggestedCategories: [],
-      totalUniqueItems: 0,
-      averageItemPrice: 0
+      suggestedCategories,
+      totalUniqueItems,
+      averageItemPrice
     };
   });
 
@@ -224,8 +330,15 @@ export class CartComputedService {
     // });
     effect(() => {
       const summary = this.cartSummary();
+      const categoryStats = this.categoryStats();
+      
       if (summary.totalItems > 0) {
-        console.log('Cart updated - TODO: Implement proper logging');
+        console.log('Cart Analytics:', {
+          totalItems: summary.totalItems,
+          finalPrice: summary.finalPrice,
+          numberOfCategories: categoryStats.length,
+          timestamp: new Date().toISOString()
+        });
       }
     });
   }
@@ -248,8 +361,32 @@ export class CartComputedService {
   // - Find existing: items.find(item => item.productId === product.id)
   // - Update signal: this.items.update(items => [...items, newItem])
   addItem(product: Product): void {
-    // TODO: Implement this method
-    throw new Error('addItem method not implemented yet');
+    // Get current items from signal
+    const currentItems = this.items();
+    
+    // Check if product already exists in cart
+    const existingItem = currentItems.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      // Item exists - increase quantity by 1
+      this.updateQuantity(product.id, existingItem.quantity + 1);
+    } else {
+      // Item doesn't exist - create new CartItem
+      const newItem: CartItem = {
+        id: this.generateId(),
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        image: product.image,
+        category: product.category,
+        discount: product.discount || 0
+      };
+      
+      // Add new item using signal update
+      // The update function receives current items and returns new array
+      this.items.update(items => [...items, newItem]);
+    }
   }
 
   // TODO: Implement removeItem method
@@ -261,8 +398,10 @@ export class CartComputedService {
   // - Use this.items.update() with filter
   // - Filter: items => items.filter(item => item.productId !== productId)
   removeItem(productId: string): void {
-    // TODO: Implement this method
-    throw new Error('removeItem method not implemented yet');
+    // Update signal by filtering out the target item
+    this.items.update(items => 
+      items.filter(item => item.productId !== productId)
+    );
   }
 
   // TODO: Implement updateQuantity method
@@ -275,8 +414,20 @@ export class CartComputedService {
   // - Use this.items.update() with map
   // - Map: items => items.map(item => condition ? {...item, quantity} : item)
   updateQuantity(productId: string, quantity: number): void {
-    // TODO: Implement this method
-    throw new Error('updateQuantity method not implemented yet');
+    // Handle edge case: quantity <= 0 means remove item
+    if (quantity <= 0) {
+      this.removeItem(productId);
+      return;
+    }
+    
+    // Update signal using map to transform the matching item
+    this.items.update(items =>
+      items.map(item =>
+        item.productId === productId
+          ? { ...item, quantity } // Update quantity for matching item
+          : item // Keep other items unchanged
+      )
+    );
   }
 
   // TODO: Implement clearCart method
@@ -286,8 +437,8 @@ export class CartComputedService {
   // HINTS:
   // - Use this.items.set([])
   clearCart(): void {
-    // TODO: Implement this method
-    throw new Error('clearCart method not implemented yet');
+    // Set signal to empty array - this triggers all computed signals and effects
+    this.items.set([]);
   }
 
   // TODO: Implement filter and sort methods
@@ -300,24 +451,24 @@ export class CartComputedService {
   // REQUIREMENTS: Set the selectedCategory signal
   // HINT: this.selectedCategory.set(category)
   setCategory(category: string): void {
-    // TODO: Implement this method
-    throw new Error('setCategory method not implemented yet');
+    // Update category filter signal - this automatically updates filteredItems computed
+    this.selectedCategory.set(category);
   }
 
   // TODO: Implement setSearchQuery method
   // REQUIREMENTS: Set the searchQuery signal
   // HINT: this.searchQuery.set(query)
   setSearchQuery(query: string): void {
-    // TODO: Implement this method
-    throw new Error('setSearchQuery method not implemented yet');
+    // Update search filter signal - this automatically updates filteredItems computed
+    this.searchQuery.set(query);
   }
 
   // TODO: Implement setSortOrder method
   // REQUIREMENTS: Set the sortOrder signal
   // HINT: this.sortOrder.set(order)
   setSortOrder(order: 'asc' | 'desc'): void {
-    // TODO: Implement this method
-    throw new Error('setSortOrder method not implemented yet');
+    // Update sort order signal - this automatically updates filteredItems computed
+    this.sortOrder.set(order);
   }
 
   // Helper methods (already implemented for you)

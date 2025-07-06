@@ -49,8 +49,40 @@ export class ShoppingCartRxjsService {
   // - Update BehaviorSubject: this.itemsSubject.next(newArray)
   // - Generate ID: this.generateId()
   addItem(product: Product): void {
-    // TODO: Implement this method
-    throw new Error('addItem method not implemented yet');
+    // Get current cart state - BehaviorSubject.value gives us the latest state
+    const currentItems = this.itemsSubject.value;
+    
+    // Check if product already exists in cart (by productId)
+    const existingItem = currentItems.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      // Item exists - increase quantity by 1 using our updateQuantity method
+      // This delegates to existing logic and maintains consistency
+      this.updateQuantity(product.id, existingItem.quantity + 1);
+    } else {
+      // Item doesn't exist - create new CartItem with quantity 1
+      const newItem: CartItem = {
+        id: this.generateId(), // Generate unique ID for this cart item
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1, // New items always start with quantity 1
+        image: product.image,
+        category: product.category,
+        discount: product.discount || 0 // Default to 0 if no discount
+      };
+      
+      // Create new array with existing items plus new item (immutable pattern)
+      // Using spread operator ensures we don't mutate the existing array
+      const updatedItems = [...currentItems, newItem];
+      
+      // Update the BehaviorSubject with new state
+      // This triggers all subscribers (components) to update
+      this.itemsSubject.next(updatedItems);
+      
+      // Persist changes to localStorage for cart recovery
+      this.saveCartToStorage();
+    }
   }
 
   // TODO: Implement removeItem method
@@ -65,8 +97,19 @@ export class ShoppingCartRxjsService {
   // - Update subject: this.itemsSubject.next(filteredItems)
   // - Save: this.saveCartToStorage()
   removeItem(productId: string): void {
-    // TODO: Implement this method
-    throw new Error('removeItem method not implemented yet');
+    // Get current cart state
+    const currentItems = this.itemsSubject.value;
+    
+    // Filter out the item with matching productId (immutable pattern)
+    // This creates a new array without the target item
+    const filteredItems = currentItems.filter(item => item.productId !== productId);
+    
+    // Update BehaviorSubject with filtered array
+    // This automatically notifies all subscribers about the change
+    this.itemsSubject.next(filteredItems);
+    
+    // Persist the updated cart to localStorage
+    this.saveCartToStorage();
   }
 
   // TODO: Implement updateQuantity method
@@ -84,8 +127,28 @@ export class ShoppingCartRxjsService {
   // - Use map() to transform array: items.map(item => condition ? updatedItem : item)
   // - Use spread operator for immutable updates: { ...item, quantity }
   updateQuantity(productId: string, quantity: number): void {
-    // TODO: Implement this method
-    throw new Error('updateQuantity method not implemented yet');
+    // Handle edge case: quantity <= 0 means remove the item
+    if (quantity <= 0) {
+      this.removeItem(productId);
+      return;
+    }
+    
+    // Get current cart state
+    const currentItems = this.itemsSubject.value;
+    
+    // Update only the matching item using map (immutable pattern)
+    // Map creates a new array with transformed items
+    const updatedItems = currentItems.map(item => 
+      item.productId === productId 
+        ? { ...item, quantity } // Spread operator creates new object with updated quantity
+        : item // Keep other items unchanged
+    );
+    
+    // Update BehaviorSubject with new array
+    this.itemsSubject.next(updatedItems);
+    
+    // Persist changes to localStorage
+    this.saveCartToStorage();
   }
 
   // TODO: Implement clearCart method
@@ -97,8 +160,11 @@ export class ShoppingCartRxjsService {
   // - Use this.itemsSubject.next([])
   // - Call this.saveCartToStorage()
   clearCart(): void {
-    // TODO: Implement this method
-    throw new Error('clearCart method not implemented yet');
+    // Set cart to empty array - this triggers all reactive streams
+    this.itemsSubject.next([]);
+    
+    // Clear localStorage as well
+    this.saveCartToStorage();
   }
 
   // TODO: Implement getCartSummary method that returns Observable<CartSummary>
@@ -126,28 +192,39 @@ export class ShoppingCartRxjsService {
   // - Discount calculation: (item.price * item.quantity * (item.discount || 0) / 100)
   // - Return CartSummary object with all calculated properties
   getCartSummary(): Observable<CartSummary> {
-    // TODO: Implement this method
-    // SYNTAX HINT:
-    // return this.items$.pipe(
-    //   map(items => {
-    //     const totalItems = items.reduce(...);
-    //     const totalPrice = items.reduce(...);
-    //     const totalDiscount = items.reduce(...);
-    //     const tax = (totalPrice - totalDiscount) * 0.08;
-    //     const finalPrice = totalPrice - totalDiscount + tax;
-    //     return { totalItems, totalPrice, totalDiscount, tax, finalPrice };
-    //   })
-    // );
-    
-    // TEMPORARY: Return empty summary observable for compilation - students must implement calculations
+    // Return reactive stream that recalculates whenever items change
+    // This is the power of RxJS - automatic updates when source data changes
     return this.items$.pipe(
-      map(() => ({
-        totalItems: 0,
-        totalPrice: 0,
-        totalDiscount: 0,
-        tax: 0,
-        finalPrice: 0
-      }))
+      map(items => {
+        // Calculate total items (sum of all quantities)
+        const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+        
+        // Calculate total price (sum of price × quantity for each item)
+        const totalPrice = items.reduce((sum, item) => {
+          return sum + (item.price * item.quantity);
+        }, 0);
+        
+        // Calculate total discount (sum of discount amounts)
+        const totalDiscount = items.reduce((sum, item) => {
+          const discount = item.discount || 0; // Default to 0 if no discount
+          return sum + (item.price * item.quantity * discount / 100);
+        }, 0);
+        
+        // Calculate tax (8% of subtotal after discounts)
+        const tax = (totalPrice - totalDiscount) * 0.08;
+        
+        // Calculate final price (subtotal + tax)
+        const finalPrice = totalPrice - totalDiscount + tax;
+        
+        // Return CartSummary object with all calculated values
+        return {
+          totalItems,
+          totalPrice,
+          totalDiscount,
+          tax,
+          finalPrice
+        };
+      })
     );
   }
 
@@ -160,15 +237,13 @@ export class ShoppingCartRxjsService {
   // - Use this.items$.pipe(map(items => ...))
   // - Sum quantities: items.reduce((sum, item) => sum + item.quantity, 0)
   getTotalItems(): Observable<number> {
-    // TODO: Implement this method
-    // SYNTAX HINT:
-    // return this.items$.pipe(
-    //   map(items => items.reduce((sum, item) => sum + item.quantity, 0))
-    // );
-    
-    // TEMPORARY: Return zero items observable for compilation - students must implement counting
+    // Return reactive stream of total item count
+    // This automatically updates when cart items change
     return this.items$.pipe(
-      map(() => 0)
+      map(items => {
+        // Sum all quantities in the cart
+        return items.reduce((sum, item) => sum + item.quantity, 0);
+      })
     );
   }
 

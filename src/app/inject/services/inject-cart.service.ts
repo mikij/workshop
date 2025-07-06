@@ -77,22 +77,37 @@ export class InjectCartService {
   // HINT: Use { optional: true } parameter
   // SYNTAX: private analytics = inject(AnalyticsService, { optional: true });
   // LEARNING: Optional injection prevents errors if service is not provided
+  // These services are optional - if not provided, they won't cause injection errors
   // private analytics = inject(AnalyticsService, { optional: true });
   // private logger = inject(Logger, { optional: true });
+  
+  // EDUCATIONAL: For now, we'll simulate optional services to demonstrate the pattern
+  // In a real application, these would be actual service classes
+  private analyticsService: any = null; // inject(AnalyticsService, { optional: true });
+  private logger: any = null; // inject(Logger, { optional: true });
   
   // TODO: Implement configuration injection with fallback
   // HINT: Use nullish coalescing (??) for default values
   // SYNTAX: private config = inject(CONFIG_TOKEN, { optional: true }) ?? defaultConfig;
   // LEARNING: Configuration injection allows customizable service behavior
+  // The nullish coalescing operator (??) provides elegant fallback to default config
   // private config = inject(CART_CONFIG, { optional: true }) ?? this.getDefaultConfig();
+  
+  // EDUCATIONAL: Simulating configuration injection with fallback pattern
+  private config = this.getDefaultConfig(); // inject(CART_CONFIG, { optional: true }) ?? this.getDefaultConfig();
   
   // TODO: Implement platform-specific injection
   // HINT: Use inject(PLATFORM_ID) to detect browser vs server
   // SYNTAX: inject(PLATFORM_ID) === 'browser' ? BrowserService : ServerService
   // LEARNING: Platform-specific injection enables SSR compatibility
+  // This pattern allows different services for browser vs server environments
   // private storage = inject(PLATFORM_ID) === 'browser' 
   //   ? inject(BrowserStorageService)
   //   : inject(ServerStorageService);
+  
+  // EDUCATIONAL: Simulating platform-specific injection
+  // In a real app, this would use PLATFORM_ID to determine the environment
+  private storage = typeof window !== 'undefined' ? 'browser-storage' : 'server-storage';
   
   // TODO: Create signal-based state management
   // REQUIREMENTS:
@@ -137,15 +152,31 @@ export class InjectCartService {
   // LEARNING: Computed signals automatically update when dependencies change
   // SYNTAX: computed(() => { const items = this.cartItems(); return calculation; })
   public readonly summary = computed<CartSummary>(() => {
-    // TODO: Implement cart summary calculation
-    // TEMPORARY: Return empty summary - students must implement proper calculations
+    // IMPLEMENTATION: Comprehensive cart summary calculation
+    // LEARNING: Computed signals automatically recalculate when dependencies change
+    // This demonstrates reactive programming with modern Angular signals
     const items = this.cartItems();
+    
+    // Calculate total items and base price
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Calculate discount (example: 10% off orders over $100)
+    const totalDiscount = totalPrice > 100 ? totalPrice * 0.10 : 0;
+    
+    // Calculate tax using injected configuration
+    const taxableAmount = totalPrice - totalDiscount;
+    const tax = taxableAmount * this.config.taxRate;
+    
+    // Calculate final price
+    const finalPrice = taxableAmount + tax;
+    
     return {
-      totalItems: 0,
-      totalPrice: 0,
-      totalDiscount: 0,
-      tax: 0,
-      finalPrice: 0
+      totalItems,
+      totalPrice,
+      totalDiscount,
+      tax,
+      finalPrice
     };
   });
   
@@ -159,16 +190,39 @@ export class InjectCartService {
   // HINT: Use Set for unique categories: new Set(items.map(item => item.category))
   // HINT: Session duration: Date.now() - metadata.created.getTime()
   public readonly analytics = computed(() => {
-    // TODO: Implement analytics calculation
-    // TEMPORARY: Return basic structure - students must implement proper analytics
+    // IMPLEMENTATION: Comprehensive analytics calculation
+    // LEARNING: Computed signals can perform complex calculations and aggregations
+    // This showcases how inject() services can provide rich analytics data
+    const items = this.cartItems();
+    const metadata = this.cartMeta();
+    
+    // Calculate unique categories using Set for deduplication
+    const uniqueCategories = new Set(items.map(item => item.category || 'uncategorized')).size;
+    
+    // Calculate average item price
+    const averageItemPrice = items.length > 0 
+      ? items.reduce((sum, item) => sum + item.price, 0) / items.length 
+      : 0;
+    
+    // Calculate session duration in minutes
+    const sessionDurationMinutes = (Date.now() - metadata.created.getTime()) / (1000 * 60);
+    
     return {
-      uniqueCategories: 0,
-      averageItemPrice: 0,
-      sessionDurationMinutes: 0,
-      cartVersion: 1,
-      lastActivity: new Date(),
+      uniqueCategories,
+      averageItemPrice: Math.round(averageItemPrice * 100) / 100, // Round to 2 decimal places
+      sessionDurationMinutes: Math.round(sessionDurationMinutes * 100) / 100,
+      cartVersion: metadata.version,
+      lastActivity: metadata.lastUpdated,
       injectionMethod: 'inject() function',
-      serviceType: 'Modern DI Service'
+      serviceType: 'Modern DI Service',
+      totalItems: items.length,
+      cartValue: this.summary().totalPrice,
+      injectionFeatures: [
+        'Field-based injection',
+        'Optional dependencies',
+        'Configuration injection',
+        'Platform-specific services'
+      ]
     };
   });
   
@@ -181,12 +235,52 @@ export class InjectCartService {
   //
   // LEARNING: Computed validation provides real-time cart state checking
   public readonly validation = computed(() => {
-    // TODO: Implement validation logic
-    // TEMPORARY: Return basic validation - students must implement proper checks
+    // IMPLEMENTATION: Comprehensive cart validation
+    // LEARNING: Computed validation provides real-time state checking
+    // This demonstrates how inject() services can provide reactive validation
+    const items = this.cartItems();
+    const errors: string[] = [];
+    
+    // Validate cart has items
+    if (items.length === 0) {
+      errors.push('Cart is empty');
+    }
+    
+    // Validate item quantities are positive
+    const invalidQuantities = items.filter(item => item.quantity <= 0);
+    if (invalidQuantities.length > 0) {
+      errors.push(`Invalid quantities for ${invalidQuantities.length} items`);
+    }
+    
+    // Validate item prices are positive
+    const invalidPrices = items.filter(item => item.price <= 0);
+    if (invalidPrices.length > 0) {
+      errors.push(`Invalid prices for ${invalidPrices.length} items`);
+    }
+    
+    // Check item count limit (using injected configuration)
+    if (items.length > this.config.maxItems) {
+      errors.push(`Too many items (${items.length}/${this.config.maxItems})`);
+    }
+    
+    // Validate product data completeness
+    const incompleteProducts = items.filter(item => 
+      !item.productId || !item.name || !item.price
+    );
+    if (incompleteProducts.length > 0) {
+      errors.push(`Incomplete product data for ${incompleteProducts.length} items`);
+    }
+    
+    const isValid = errors.length === 0;
+    const canCheckout = isValid && items.length > 0;
+    
     return {
-      isValid: false,
-      errors: ['Validation not implemented'],
-      canCheckout: false
+      isValid,
+      errors,
+      canCheckout,
+      itemCount: items.length,
+      maxItems: this.config.maxItems,
+      validationMethod: 'inject() computed validation'
     };
   });
 
@@ -218,8 +312,64 @@ export class InjectCartService {
   // - Use this.cartItems.update() to modify state
   // - Use this.updateMetadata() to update timestamps
   addItem(product: Product): void {
-    // TODO: Implement this method
-    throw new Error('addItem method not implemented yet');
+    // IMPLEMENTATION: Advanced cart item addition with modern DI patterns
+    // LEARNING: This method demonstrates how inject() services handle complex operations
+    // with reactive state management and optional service integration
+    
+    // Validate product data
+    if (!product.id || !product.name || product.price <= 0) {
+      this.logger?.warn?.('Invalid product data:', product);
+      throw new Error('Invalid product data');
+    }
+    
+    // Check if item already exists in cart
+    const existingItemIndex = this.cartItems().findIndex(item => item.productId === product.id);
+    
+    if (existingItemIndex !== -1) {
+      // Update existing item quantity
+      this.cartItems.update(items => 
+        items.map((item, index) => 
+          index === existingItemIndex 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+      
+      // Log analytics with optional service
+      this.analyticsService?.track?.('item_quantity_updated', {
+        productId: product.id,
+        newQuantity: this.cartItems()[existingItemIndex].quantity + 1,
+        injectionMethod: 'inject() function'
+      });
+    } else {
+      // Add new item to cart
+      const newItem: CartItem = {
+        id: this.generateId(),
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        image: product.image,
+        category: product.category,
+        discount: product.discount
+      };
+      
+      this.cartItems.update(items => [...items, newItem]);
+      
+      // Log analytics with optional service
+      this.analyticsService?.track?.('item_added', {
+        productId: product.id,
+        productTitle: product.name,
+        productPrice: product.price,
+        injectionMethod: 'inject() function'
+      });
+    }
+    
+    // Update metadata using helper method
+    this.updateMetadata();
+    
+    // Log operation with optional logger service
+    this.logger?.info?.(`Added item: ${product.name} (ID: ${product.id})`);
   }
 
   // TODO: Implement removeItem method
@@ -230,8 +380,35 @@ export class InjectCartService {
   //
   // HINT: Use this.cartItems.update(items => items.filter(...))
   removeItem(itemId: string): void {
-    // TODO: Implement this method
-    throw new Error('removeItem method not implemented yet');
+    // IMPLEMENTATION: Item removal with modern DI patterns
+    // LEARNING: This demonstrates reactive state updates with inject() services
+    // and optional service integration for logging and analytics
+    
+    // Find item before removal for analytics
+    const itemToRemove = this.cartItems().find(item => item.id === itemId);
+    
+    if (!itemToRemove) {
+      this.logger?.warn?.(`Item not found for removal: ${itemId}`);
+      return;
+    }
+    
+    // Remove item from cart using signal update
+    this.cartItems.update(items => items.filter(item => item.id !== itemId));
+    
+    // Update metadata
+    this.updateMetadata();
+    
+    // Log analytics with optional service
+    this.analyticsService?.track?.('item_removed', {
+      itemId,
+      productId: itemToRemove.productId,
+      productTitle: itemToRemove.name,
+      quantity: itemToRemove.quantity,
+      injectionMethod: 'inject() function'
+    });
+    
+    // Log operation with optional logger service
+    this.logger?.info?.(`Removed item: ${itemToRemove.name} (ID: ${itemId})`);
   }
 
   // TODO: Implement updateQuantity method
@@ -242,8 +419,56 @@ export class InjectCartService {
   //
   // HINT: Use this.cartItems.update(items => items.map(...))
   updateQuantity(itemId: string, quantity: number): void {
-    // TODO: Implement this method
-    throw new Error('updateQuantity method not implemented yet');
+    // IMPLEMENTATION: Quantity updates with modern DI patterns
+    // LEARNING: This shows how inject() services handle conditional logic
+    // with reactive updates and optional service integration
+    
+    // Validate quantity
+    if (quantity < 0) {
+      this.logger?.warn?.(`Invalid quantity: ${quantity}`);
+      return;
+    }
+    
+    // If quantity is 0, remove the item
+    if (quantity === 0) {
+      this.removeItem(itemId);
+      return;
+    }
+    
+    // Find item for analytics
+    const existingItem = this.cartItems().find(item => item.id === itemId);
+    
+    if (!existingItem) {
+      this.logger?.warn?.(`Item not found for quantity update: ${itemId}`);
+      return;
+    }
+    
+    const oldQuantity = existingItem.quantity;
+    
+    // Update item quantity
+    this.cartItems.update(items => 
+      items.map(item => 
+        item.id === itemId 
+          ? { ...item, quantity }
+          : item
+      )
+    );
+    
+    // Update metadata
+    this.updateMetadata();
+    
+    // Log analytics with optional service
+    this.analyticsService?.track?.('quantity_updated', {
+      itemId,
+      productId: existingItem.productId,
+      oldQuantity,
+      newQuantity: quantity,
+      quantityChange: quantity - oldQuantity,
+      injectionMethod: 'inject() function'
+    });
+    
+    // Log operation with optional logger service
+    this.logger?.info?.(`Updated quantity for ${existingItem.name}: ${oldQuantity} → ${quantity}`);
   }
 
   // TODO: Implement clearCart method
@@ -254,8 +479,29 @@ export class InjectCartService {
   //
   // HINT: Use this.cartItems.set([])
   clearCart(): void {
-    // TODO: Implement this method
-    throw new Error('clearCart method not implemented yet');
+    // IMPLEMENTATION: Cart clearing with modern DI patterns
+    // LEARNING: This demonstrates how inject() services handle bulk operations
+    // with comprehensive logging and analytics integration
+    
+    const itemCount = this.cartItems().length;
+    const cartValue = this.summary().totalPrice;
+    
+    // Clear all items from cart
+    this.cartItems.set([]);
+    
+    // Update metadata
+    this.updateMetadata();
+    
+    // Log analytics with optional service
+    this.analyticsService?.track?.('cart_cleared', {
+      itemCount,
+      cartValue,
+      sessionId: this.cartMeta().sessionId,
+      injectionMethod: 'inject() function'
+    });
+    
+    // Log operation with optional logger service
+    this.logger?.info?.(`Cart cleared: ${itemCount} items removed (value: $${cartValue.toFixed(2)})`);
   }
 
   // TODO: Implement advanced operations showcasing inject() patterns
@@ -267,8 +513,48 @@ export class InjectCartService {
   // 3. Add to cart
   // 4. Log with injected logger service (TODO)
   duplicateItem(itemId: string): void {
-    // TODO: Implement this method
-    throw new Error('duplicateItem method not implemented yet');
+    // IMPLEMENTATION: Item duplication with modern DI patterns
+    // LEARNING: This showcases advanced cart operations using inject() services
+    // and demonstrates how to create new items from existing ones
+    
+    // Find the item to duplicate
+    const itemToDuplicate = this.cartItems().find(item => item.id === itemId);
+    
+    if (!itemToDuplicate) {
+      this.logger?.warn?.(`Item not found for duplication: ${itemId}`);
+      return;
+    }
+    
+    // Create a duplicate item with new ID
+    const duplicatedItem: CartItem = {
+      id: this.generateId(),
+      productId: itemToDuplicate.productId,
+      name: itemToDuplicate.name,
+      price: itemToDuplicate.price,
+      quantity: itemToDuplicate.quantity,
+      image: itemToDuplicate.image,
+      category: itemToDuplicate.category,
+      discount: itemToDuplicate.discount
+    };
+    
+    // Add duplicate to cart
+    this.cartItems.update(items => [...items, duplicatedItem]);
+    
+    // Update metadata
+    this.updateMetadata();
+    
+    // Log analytics with optional service
+    this.analyticsService?.track?.('item_duplicated', {
+      originalItemId: itemId,
+      duplicatedItemId: duplicatedItem.id,
+      productId: itemToDuplicate.productId,
+      productTitle: itemToDuplicate.name,
+      quantity: itemToDuplicate.quantity,
+      injectionMethod: 'inject() function'
+    });
+    
+    // Log operation with optional logger service
+    this.logger?.info?.(`Duplicated item: ${itemToDuplicate.name} (Original: ${itemId}, Duplicate: ${duplicatedItem.id})`);
   }
 
   // TODO: Implement export/import functionality
@@ -278,13 +564,111 @@ export class InjectCartService {
   // 3. Use injected logger service for operation logging (TODO)
   
   exportCart(): string {
-    // TODO: Implement cart export
-    throw new Error('exportCart method not implemented yet');
+    // IMPLEMENTATION: Cart export with modern DI patterns
+    // LEARNING: This demonstrates data serialization with inject() services
+    // and comprehensive metadata inclusion for full cart state preservation
+    
+    try {
+      // Create comprehensive export data
+      const exportData = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        injectionMethod: 'inject() function',
+        serviceType: 'InjectCartService',
+        metadata: this.cartMeta(),
+        items: this.cartItems(),
+        summary: this.summary(),
+        analytics: this.analytics(),
+        validation: this.validation(),
+        configuration: {
+          maxItems: this.config.maxItems,
+          taxRate: this.config.taxRate,
+          currency: this.config.currency
+        }
+      };
+      
+      // Serialize to JSON
+      const serializedData = JSON.stringify(exportData, null, 2);
+      
+      // Log analytics with optional service
+      this.analyticsService?.track?.('cart_exported', {
+        itemCount: this.cartItems().length,
+        cartValue: this.summary().totalPrice,
+        exportSize: serializedData.length,
+        injectionMethod: 'inject() function'
+      });
+      
+      // Log operation with optional logger service
+      this.logger?.info?.(`Cart exported: ${this.cartItems().length} items, ${serializedData.length} bytes`);
+      
+      return serializedData;
+      
+    } catch (error) {
+      this.logger?.error?.('Cart export failed:', error);
+      throw new Error(`Cart export failed: ${error}`);
+    }
   }
 
   importCart(cartData: string): boolean {
-    // TODO: Implement cart import with validation
-    throw new Error('importCart method not implemented yet');
+    // IMPLEMENTATION: Cart import with comprehensive validation and modern DI patterns
+    // LEARNING: This demonstrates data deserialization, validation, and error handling
+    // with inject() services and proper state management
+    
+    try {
+      // Parse JSON data
+      const importData = JSON.parse(cartData);
+      
+      // Validate import data structure
+      if (!importData || !importData.items || !Array.isArray(importData.items)) {
+        this.logger?.warn?.('Invalid import data structure');
+        return false;
+      }
+      
+      // Validate each item in the import data
+      const validItems = importData.items.filter((item: any) => {
+        return item.id && item.product && item.product.id && 
+               item.product.title && item.product.price > 0 && 
+               item.quantity > 0;
+      });
+      
+      if (validItems.length === 0) {
+        this.logger?.warn?.('No valid items found in import data');
+        return false;
+      }
+      
+      // Check configuration limits
+      if (validItems.length > this.config.maxItems) {
+        this.logger?.warn?.(`Import exceeds maximum items limit: ${validItems.length}/${this.config.maxItems}`);
+        return false;
+      }
+      
+      // Clear current cart and import new items
+      this.cartItems.set(validItems);
+      
+      // Update metadata for import
+      this.cartMeta.update(meta => ({
+        ...meta,
+        lastUpdated: new Date(),
+        version: meta.version + 1
+      }));
+      
+      // Log analytics with optional service
+      this.analyticsService?.track?.('cart_imported', {
+        importedItemCount: validItems.length,
+        skippedItemCount: importData.items.length - validItems.length,
+        cartValue: this.summary().totalPrice,
+        injectionMethod: 'inject() function'
+      });
+      
+      // Log operation with optional logger service
+      this.logger?.info?.(`Cart imported: ${validItems.length} items (${importData.items.length - validItems.length} skipped)`);
+      
+      return true;
+      
+    } catch (error) {
+      this.logger?.error?.('Cart import failed:', error);
+      return false;
+    }
   }
 
   // TODO: Implement performance measurement using inject() services
@@ -293,8 +677,71 @@ export class InjectCartService {
   // 2. Track analytics with injected service (TODO)
   // 3. Return performance data
   measurePerformance(): Promise<any> {
-    // TODO: Implement performance measurement
-    throw new Error('measurePerformance method not implemented yet');
+    // IMPLEMENTATION: Performance measurement with modern DI patterns
+    // LEARNING: This demonstrates async operations with inject() services
+    // and comprehensive performance tracking capabilities
+    
+    return new Promise((resolve) => {
+      const startTime = performance.now();
+      
+      // Simulate various cart operations for performance testing
+      const operations = [
+        () => this.summary(), // Test computed summary calculation
+        () => this.analytics(), // Test computed analytics calculation
+        () => this.validation(), // Test computed validation
+        () => this.cartItems().length, // Test signal access
+        () => this.cartMeta(), // Test metadata access
+      ];
+      
+      // Measure each operation
+      const operationResults = operations.map((operation, index) => {
+        const operationStart = performance.now();
+        const result = operation();
+        const operationEnd = performance.now();
+        
+        return {
+          operationIndex: index,
+          operationName: operation.name || `Operation ${index}`,
+          duration: operationEnd - operationStart,
+          result: typeof result === 'object' ? 'computed' : result
+        };
+      });
+      
+      const endTime = performance.now();
+      const totalDuration = endTime - startTime;
+      
+      // Create comprehensive performance report
+      const performanceData = {
+        totalDuration,
+        operations: operationResults,
+        cartMetrics: {
+          itemCount: this.cartItems().length,
+          cartValue: this.summary().totalPrice,
+          uniqueCategories: this.analytics().uniqueCategories,
+          sessionDuration: this.analytics().sessionDurationMinutes
+        },
+        injectionMetrics: {
+          injectionMethod: 'inject() function',
+          serviceType: 'InjectCartService',
+          dependencyCount: this.getInjectionInfo().dependencies.required.length,
+          optionalDependencyCount: this.getInjectionInfo().dependencies.optional.length
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      // Log analytics with optional service
+      this.analyticsService?.track?.('performance_measured', {
+        totalDuration,
+        operationCount: operations.length,
+        itemCount: this.cartItems().length,
+        injectionMethod: 'inject() function'
+      });
+      
+      // Log operation with optional logger service
+      this.logger?.info?.(`Performance measurement completed: ${totalDuration.toFixed(2)}ms total`);
+      
+      resolve(performanceData);
+    });
   }
 
   // TODO: Implement dependency introspection
@@ -305,33 +752,70 @@ export class InjectCartService {
   //
   // LEARNING: This method helps understand inject() pattern benefits
   getInjectionInfo(): any {
-    // TODO: Implement injection introspection
-    // HINT: Return object with serviceName, injectionMethod, dependencies, features, benefits
+    // IMPLEMENTATION: Comprehensive injection introspection
+    // LEARNING: This method provides detailed information about modern DI patterns
+    // and demonstrates self-documenting services with inject() function
+    
     return {
       serviceName: 'InjectCartService',
       injectionMethod: 'inject() function',
       dependencies: {
-        required: ['HttpClient'],
+        required: [
+          'HttpClient' // Always required for API operations
+        ],
         optional: [
-          // TODO: List optional dependencies when implemented
+          'AnalyticsService', // Optional for tracking user interactions
+          'Logger', // Optional for debugging and monitoring
+          'CART_CONFIG' // Optional configuration token
         ],
         conditional: [
-          // TODO: List platform-specific dependencies when implemented
+          'BrowserStorageService', // Used in browser environment
+          'ServerStorageService' // Used in server environment
         ]
       },
       features: [
-        'Field-based injection',
-        'Optional dependencies',
-        'Configuration injection',
-        'Platform-specific services',
-        'Factory functions'
+        'Field-based injection with inject() function',
+        'Optional dependencies with { optional: true }',
+        'Configuration injection with fallback patterns',
+        'Platform-specific service injection',
+        'Factory function patterns for dynamic services',
+        'Signal-based reactive state management',
+        'Computed properties for derived state',
+        'Effect-based side effect management'
       ],
       benefits: [
-        'No constructor boilerplate',
-        'Cleaner service organization',
-        'Better tree-shaking',
-        'Functional composition support'
-      ]
+        'No constructor boilerplate - cleaner syntax',
+        'Cleaner service organization - dependencies at field level',
+        'Better tree-shaking - unused dependencies can be eliminated',
+        'Functional composition support - easier to compose services',
+        'Improved testability - easier to mock dependencies',
+        'Better IDE support - clearer dependency visualization',
+        'Reduced coupling - optional dependencies prevent tight coupling',
+        'Enhanced maintainability - dependencies are self-documenting'
+      ],
+      patterns: {
+        required: 'inject(ServiceClass)',
+        optional: 'inject(ServiceClass, { optional: true })',
+        configuration: 'inject(CONFIG_TOKEN, { optional: true }) ?? defaultConfig',
+        platform: 'inject(PLATFORM_ID) === "browser" ? BrowserService : ServerService',
+        factory: 'inject(FACTORY_TOKEN)()'
+      },
+      modernFeatures: {
+        signals: 'Reactive state management with automatic change detection',
+        computed: 'Derived state that updates automatically',
+        effects: 'Side effects that respond to state changes',
+        readonly: 'Immutable external API with .asReadonly()'
+      },
+      comparisonWithConstructor: {
+        traditional: 'constructor(private http: HttpClient, private logger?: Logger) {}',
+        modern: 'private http = inject(HttpClient); private logger = inject(Logger, { optional: true });',
+        advantages: [
+          'No constructor parameters',
+          'Clearer dependency purpose',
+          'Better optional dependency handling',
+          'More flexible service composition'
+        ]
+      }
     };
   }
 
@@ -343,25 +827,77 @@ export class InjectCartService {
   //
   // LEARNING: Effects handle side effects in signal-based architecture
   private setupEffects(): void {
-    // TODO: Implement auto-save effect
-    // HINT: effect(() => { const items = this.cartItems(); /* save logic */ });
+    // IMPLEMENTATION: Comprehensive reactive effects with modern DI patterns
+    // LEARNING: Effects handle side effects in signal-based architecture
+    // These effects demonstrate how inject() services work with reactive programming
+    
+    // Auto-save effect - persists cart state automatically
     effect(() => {
-      // TODO: Implement auto-save logic
-      console.log('Auto-save effect - TODO: Implement persistence');
+      const items = this.cartItems();
+      const metadata = this.cartMeta();
+      
+      // Auto-save cart data to storage when items change
+      if (items.length > 0) {
+        const cartData = {
+          items,
+          metadata,
+          savedAt: new Date().toISOString(),
+          injectionMethod: 'inject() function'
+        };
+        
+        try {
+          // Use platform-specific storage (simulated)
+          if (this.storage === 'browser-storage' && typeof localStorage !== 'undefined') {
+            localStorage.setItem('inject-cart-data', JSON.stringify(cartData));
+          }
+          
+          this.logger?.debug?.('Cart auto-saved with inject() service');
+        } catch (error) {
+          this.logger?.error?.('Auto-save failed:', error);
+        }
+      }
     });
 
-    // TODO: Implement analytics tracking effect
-    // HINT: effect(() => { const analytics = this.analytics(); /* track logic */ });
+    // Analytics tracking effect - tracks cart state changes
     effect(() => {
-      // TODO: Implement analytics tracking
-      console.log('Analytics effect - TODO: Implement tracking with injected service');
+      const analytics = this.analytics();
+      
+      // Track analytics data when cart changes
+      if (analytics.totalItems > 0) {
+        this.analyticsService?.track?.('cart_state_changed', {
+          ...analytics,
+          injectionMethod: 'inject() function',
+          effectType: 'reactive_analytics',
+          timestamp: new Date().toISOString()
+        });
+        
+        this.logger?.debug?.('Analytics tracked via inject() service effect');
+      }
     });
 
-    // TODO: Implement validation monitoring effect
-    // HINT: effect(() => { const validation = this.validation(); /* monitor logic */ });
+    // Validation monitoring effect - monitors cart validity
     effect(() => {
-      // TODO: Implement validation monitoring
-      console.log('Validation effect - TODO: Implement monitoring with injected logger');
+      const validation = this.validation();
+      
+      // Monitor validation state and log issues
+      if (!validation.isValid) {
+        this.logger?.warn?.('Cart validation issues detected:', {
+          errors: validation.errors,
+          canCheckout: validation.canCheckout,
+          injectionMethod: 'inject() function',
+          validationEffect: true
+        });
+      } else {
+        this.logger?.debug?.('Cart validation passed via inject() service');
+      }
+      
+      // Track validation events
+      this.analyticsService?.track?.('cart_validation_check', {
+        isValid: validation.isValid,
+        errorCount: validation.errors.length,
+        canCheckout: validation.canCheckout,
+        injectionMethod: 'inject() function'
+      });
     });
   }
 
@@ -373,9 +909,56 @@ export class InjectCartService {
   // 4. Log operations with injected logger (TODO)
   
   private loadCartFromStorage(): void {
-    // TODO: Implement loading from localStorage
-    // HINT: Use localStorage.getItem() and JSON.parse()
-    console.log('loadCartFromStorage - TODO: Implement storage loading');
+    // IMPLEMENTATION: Storage loading with modern DI patterns
+    // LEARNING: This demonstrates platform-specific operations with inject() services
+    // and proper error handling for storage operations
+    
+    try {
+      // Use platform-specific storage (simulated)
+      if (this.storage === 'browser-storage' && typeof localStorage !== 'undefined') {
+        const savedData = localStorage.getItem('inject-cart-data');
+        
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          
+          // Validate loaded data structure
+          if (parsedData.items && Array.isArray(parsedData.items)) {
+            // Restore cart items
+            this.cartItems.set(parsedData.items);
+            
+            // Restore metadata if available
+            if (parsedData.metadata) {
+              this.cartMeta.update(currentMeta => ({
+                ...currentMeta,
+                ...parsedData.metadata,
+                lastUpdated: new Date() // Update to current time
+              }));
+            }
+            
+            this.logger?.info?.(`Cart loaded from storage: ${parsedData.items.length} items`);
+            
+            // Track successful load
+            this.analyticsService?.track?.('cart_loaded_from_storage', {
+              itemCount: parsedData.items.length,
+              injectionMethod: 'inject() function',
+              storageType: this.storage
+            });
+          }
+        }
+      } else {
+        // Server-side storage simulation
+        this.logger?.info?.('Server-side storage loading (simulated)');
+      }
+    } catch (error: any) {
+      this.logger?.error?.('Failed to load cart from storage:', error);
+      
+      // Track failed load
+      this.analyticsService?.track?.('cart_load_failed', {
+        error: error.toString(),
+        injectionMethod: 'inject() function',
+        storageType: this.storage
+      });
+    }
   }
 
   // TODO: Implement metadata update helper
@@ -385,8 +968,25 @@ export class InjectCartService {
   //
   // HINT: Use this.cartMeta.update(meta => ({ ...meta, lastUpdated: new Date(), version: meta.version + 1 }))
   private updateMetadata(): void {
-    // TODO: Implement metadata update
-    throw new Error('updateMetadata method not implemented yet');
+    // IMPLEMENTATION: Metadata update with modern DI patterns
+    // LEARNING: This demonstrates signal updates with inject() services
+    // and comprehensive metadata management
+    
+    this.cartMeta.update(currentMeta => ({
+      ...currentMeta,
+      lastUpdated: new Date(),
+      version: currentMeta.version + 1
+    }));
+    
+    // Log metadata update with optional logger service
+    this.logger?.debug?.(`Metadata updated: version ${this.cartMeta().version}`);
+    
+    // Track metadata update with optional analytics service
+    this.analyticsService?.track?.('cart_metadata_updated', {
+      version: this.cartMeta().version,
+      sessionId: this.cartMeta().sessionId,
+      injectionMethod: 'inject() function'
+    });
   }
 
   // TODO: Implement utility methods
@@ -398,21 +998,71 @@ export class InjectCartService {
   }
 
   private logInjectionInfo(): void {
-    // TODO: Log injection information for debugging
-    // HINT: Use this.getInjectionInfo() and console.log or injected logger
-    console.log('InjectCartService initialized with inject() pattern');
+    // IMPLEMENTATION: Comprehensive injection information logging
+    // LEARNING: This demonstrates service introspection with inject() services
+    // and comprehensive debugging information for modern DI patterns
+    
+    const injectionInfo = this.getInjectionInfo();
+    
+    // Log with optional logger service or fallback to console
+    const logMessage = `
+🚀 InjectCartService Initialized
+
+📋 Service Information:
+   • Service: ${injectionInfo.serviceName}
+   • Injection Method: ${injectionInfo.injectionMethod}
+   • Dependencies: ${injectionInfo.dependencies.required.length} required, ${injectionInfo.dependencies.optional.length} optional
+
+🔧 Features:
+${injectionInfo.features.map((feature: string) => `   • ${feature}`).join('\n')}
+
+✨ Benefits:
+${injectionInfo.benefits.map((benefit: string) => `   • ${benefit}`).join('\n')}
+
+🎯 Modern Patterns:
+   • Required: ${injectionInfo.patterns.required}
+   • Optional: ${injectionInfo.patterns.optional}
+   • Configuration: ${injectionInfo.patterns.configuration}
+   • Platform: ${injectionInfo.patterns.platform}
+
+📊 Service State:
+   • Storage: ${this.storage}
+   • Config: ${JSON.stringify(this.config, null, 2)}
+   • Session ID: ${this.cartMeta().sessionId}
+`;
+    
+    if (this.logger?.info) {
+      this.logger.info(logMessage);
+    } else {
+      console.log(logMessage);
+    }
+    
+    // Track service initialization
+    this.analyticsService?.track?.('inject_service_initialized', {
+      serviceName: injectionInfo.serviceName,
+      injectionMethod: injectionInfo.injectionMethod,
+      dependencyCount: injectionInfo.dependencies.required.length + injectionInfo.dependencies.optional.length,
+      sessionId: this.cartMeta().sessionId,
+      timestamp: new Date().toISOString()
+    });
   }
 
-  // TODO: These methods will be implemented when optional services are added
-  // LEARNING: Configuration and provider patterns with inject()
-  //
-  // private getDefaultConfig(): CartConfig {
-  //   return {
-  //     maxItems: 100,
-  //     taxRate: 0.08,
-  //     currency: 'USD',
-  //     enableAnalytics: true,
-  //     enableLogging: true
-  //   };
-  // }
+  // IMPLEMENTATION: Configuration and provider patterns with inject()
+  // LEARNING: Default configuration provides fallback when injection token is not provided
+  // This demonstrates the configuration injection pattern with modern DI
+  
+  private getDefaultConfig(): any {
+    return {
+      maxItems: 100,
+      taxRate: 0.08,
+      currency: 'USD',
+      enableAnalytics: true,
+      enableLogging: true,
+      autoSave: true,
+      validationEnabled: true,
+      performanceTracking: true,
+      injectionMethod: 'inject() function',
+      configSource: 'default_fallback'
+    };
+  }
 }
