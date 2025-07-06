@@ -233,6 +233,7 @@
   transition: background-color 0.2s ease;
   background: white !important;
   color: #333 !important;
+  min-height: 80px;
 }
 
 .cart-item:hover {
@@ -280,6 +281,7 @@
   background: #f8f9fa;
   border-radius: 8px;
   padding: 5px;
+  min-width: 120px;
 }
 
 .quantity-controls button {
@@ -309,8 +311,9 @@
 .item-total {
   font-weight: bold;
   color: #333;
-  min-width: 80px;
+  min-width: 100px;
   text-align: right;
+  font-size: 1.1rem;
 }
 
 .cart-summary {
@@ -520,6 +523,8 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  min-width: 100px;
+  white-space: nowrap;
 }
 
 .btn-primary {
@@ -574,10 +579,51 @@
   font-size: 0.8rem;
 }
 
+@media (max-width: 1400px) {
+  .cart-item {
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .quantity-controls {
+    min-width: 100px;
+  }
+  
+  .item-total {
+    min-width: 90px;
+    font-size: 1rem;
+  }
+  
+  .btn {
+    min-width: 80px;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+}
+
 @media (max-width: 1200px) {
   .cart-content {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+  
+  .cart-item {
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .quantity-controls {
+    min-width: 90px;
+  }
+  
+  .item-total {
+    min-width: 80px;
+  }
+  
+  .btn {
+    min-width: 70px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
   }
 }
 
@@ -608,7 +654,26 @@
   .cart-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .quantity-controls {
+    align-self: center;
+    min-width: 120px;
+  }
+  
+  .item-total {
+    align-self: center;
+    min-width: auto;
+    font-size: 1.2rem;
+  }
+  
+  .btn {
+    min-width: 120px;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    align-self: center;
   }
 
   .recently-viewed-list {
