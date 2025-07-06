@@ -80,7 +80,14 @@ export class AdvancedCartService {
   // - Advanced pricing strategies
   public readonly cartSummary = computed<CartSummary>(() => {
     // TODO: Implement advanced cart summary with bulk discounts and luxury tax
-    throw new Error('cartSummary computed not implemented yet');
+    // TEMPORARY: Return empty summary for compilation - students must implement enterprise calculations
+    return {
+      totalItems: 0,
+      totalPrice: 0,
+      totalDiscount: 0,
+      tax: 0,
+      finalPrice: 0
+    };
   });
 
   // TODO: Implement cart analytics computation
@@ -103,7 +110,13 @@ export class AdvancedCartService {
   // - Abandonment rate: (sessions - 1) / sessions * 100
   public readonly cartAnalytics = computed<CartAnalytics>(() => {
     // TODO: Implement analytics calculation
-    throw new Error('cartAnalytics computed not implemented yet');
+    // TEMPORARY: Return empty analytics for compilation - students must implement business intelligence
+    return {
+      totalSessions: 1,
+      averageSessionValue: 0,
+      topCategories: [],
+      abandonmentRate: 0
+    };
   });
 
   // TODO: Implement performance metrics computation
@@ -121,7 +134,15 @@ export class AdvancedCartService {
   // - Version tracking
   public readonly cartMetrics = computed(() => {
     // TODO: Implement performance metrics
-    throw new Error('cartMetrics computed not implemented yet');
+    // TEMPORARY: Return empty metrics for compilation - students must implement performance tracking
+    return {
+      sessionDurationMinutes: 0,
+      cartValuePerMinute: 0,
+      uniqueCategories: 0,
+      averageItemPrice: 0,
+      cartVersion: 1,
+      lastModified: new Date()
+    };
   });
 
   // TODO: Implement Resource API for server synchronization
@@ -362,7 +383,14 @@ export class AdvancedCartService {
   // REQUIREMENTS: Return read-only access to cart history
   getCartHistory() {
     // TODO: Implement history access
-    throw new Error('getCartHistory method not implemented yet');
+    // TEMPORARY: Return basic history structure for compilation - students must implement history tracking
+    return [
+      {
+        items: [],
+        lastUpdated: new Date(),
+        version: 1
+      }
+    ];
   }
 
   // TODO: Implement triggerSync method
@@ -380,6 +408,22 @@ export class AdvancedCartService {
   resetSession(): void {
     // TODO: Implement session reset
     throw new Error('resetSession method not implemented yet');
+  }
+
+  // TODO: Implement additional enterprise methods for component compatibility
+  moveToWishlist(productId: string): void {
+    // TODO: Implement wishlist functionality
+    throw new Error('moveToWishlist method not implemented yet');
+  }
+
+  optimizeCart(): void {
+    // TODO: Implement cart optimization
+    throw new Error('optimizeCart method not implemented yet');
+  }
+
+  restoreCartFromHistory(index: number): void {
+    // TODO: Implement history restoration
+    throw new Error('restoreCartFromHistory method not implemented yet');
   }
 
   // Helper methods (already implemented for you)

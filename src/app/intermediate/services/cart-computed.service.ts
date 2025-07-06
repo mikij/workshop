@@ -56,7 +56,14 @@ export class CartComputedService {
   // });
   public readonly cartSummary = computed<CartSummary>(() => {
     // TODO: Implement advanced cart summary calculation
-    throw new Error('cartSummary computed not implemented yet');
+    // TEMPORARY: Return empty summary for compilation - students must implement proper calculations
+    return {
+      totalItems: 0,
+      totalPrice: 0,
+      totalDiscount: 0,
+      tax: 0,
+      finalPrice: 0
+    };
   });
 
   // TODO: Implement computed for filtered and sorted items
@@ -77,7 +84,8 @@ export class CartComputedService {
   // - Sort by value: items.sort((a, b) => compare aValue and bValue)
   public readonly filteredItems = computed(() => {
     // TODO: Implement filtering and sorting logic
-    throw new Error('filteredItems computed not implemented yet');
+    // TEMPORARY: Return items as-is for basic functionality - students must implement proper filtering/sorting
+    return this.items();
   });
 
   // TODO: Implement computed for category statistics
@@ -97,7 +105,11 @@ export class CartComputedService {
   // - Convert to array: Array.from(stats.entries()).map(...)
   public readonly categoryStats = computed(() => {
     // TODO: Implement category statistics calculation
-    throw new Error('categoryStats computed not implemented yet');
+    // TEMPORARY: Return basic stats structure for compilation - students must implement proper analysis
+    return [
+      { category: 'electronics', itemCount: 0, totalValue: 0 },
+      { category: 'clothing', itemCount: 0, totalValue: 0 }
+    ];
   });
 
   // TODO: Implement computed for discount information
@@ -117,7 +129,13 @@ export class CartComputedService {
   // - Calculate average: sum of discounts / number of discounted items
   public readonly discountInfo = computed(() => {
     // TODO: Implement discount information calculation
-    throw new Error('discountInfo computed not implemented yet');
+    // TEMPORARY: Return empty discount info for compilation - students must implement discount logic
+    return {
+      hasDiscounts: false,
+      discountedItemsCount: 0,
+      totalSavings: 0,
+      averageDiscount: 0
+    };
   });
 
   // TODO: Implement computed for shipping information
@@ -134,7 +152,14 @@ export class CartComputedService {
   // - Amount for free shipping: Math.max(0, $500 - finalPrice)
   public readonly shippingInfo = computed(() => {
     // TODO: Implement shipping calculation
-    throw new Error('shippingInfo computed not implemented yet');
+    // TEMPORARY: Return default shipping info for compilation - students must implement shipping logic
+    return {
+      isEligibleForFreeShipping: false,
+      isFreeShipping: false, // Template compatibility
+      shippingCost: 15,
+      amountForFreeShipping: 500,
+      estimatedDelivery: '5-7 business days'
+    };
   });
 
   // TODO: Implement computed for recommendations
@@ -148,7 +173,12 @@ export class CartComputedService {
   // - Filter for recommendations: categories.filter(cat => !inCart.includes(cat))
   public readonly recommendations = computed(() => {
     // TODO: Implement recommendations calculation
-    throw new Error('recommendations computed not implemented yet');
+    // TEMPORARY: Return empty recommendations for compilation - students must implement recommendation logic
+    return {
+      suggestedCategories: [],
+      totalUniqueItems: 0,
+      averageItemPrice: 0
+    };
   });
 
   constructor() {

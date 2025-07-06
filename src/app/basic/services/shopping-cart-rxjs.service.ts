@@ -138,7 +138,17 @@ export class ShoppingCartRxjsService {
     //     return { totalItems, totalPrice, totalDiscount, tax, finalPrice };
     //   })
     // );
-    throw new Error('getCartSummary method not implemented yet');
+    
+    // TEMPORARY: Return empty summary observable for compilation - students must implement calculations
+    return this.items$.pipe(
+      map(() => ({
+        totalItems: 0,
+        totalPrice: 0,
+        totalDiscount: 0,
+        tax: 0,
+        finalPrice: 0
+      }))
+    );
   }
 
   // TODO: Implement getTotalItems method
@@ -155,7 +165,11 @@ export class ShoppingCartRxjsService {
     // return this.items$.pipe(
     //   map(items => items.reduce((sum, item) => sum + item.quantity, 0))
     // );
-    throw new Error('getTotalItems method not implemented yet');
+    
+    // TEMPORARY: Return zero items observable for compilation - students must implement counting
+    return this.items$.pipe(
+      map(() => 0)
+    );
   }
 
   // Helper methods (already implemented for you)
