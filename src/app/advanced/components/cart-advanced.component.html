@@ -320,15 +320,16 @@
           <div class="item-controls">
             <div class="quantity-control">
               <button 
-                class="btn btn-small"
+                class="quantity-btn quantity-btn-decrease"
                 (click)="onUpdateQuantity(item.productId, item.quantity - 1)"
                 [attr.aria-label]="'Decrease quantity of ' + item.name"
+                [disabled]="item.quantity <= 1"
               >
-                -
+                −
               </button>
               <span class="quantity-display">{{ item.quantity }}</span>
               <button 
-                class="btn btn-small"
+                class="quantity-btn quantity-btn-increase"
                 (click)="onUpdateQuantity(item.productId, item.quantity + 1)"
                 [attr.aria-label]="'Increase quantity of ' + item.name"
               >

@@ -126,15 +126,18 @@
               </div>
               <div class="quantity-controls">
                 <button
-                  class="btn btn-secondary"
+                  class="quantity-btn quantity-btn-decrease"
                   (click)="decrementQuantity(item.productId, item.quantity)"
+                  [attr.aria-label]="'Decrease quantity of ' + item.name"
+                  [disabled]="item.quantity <= 1"
                 >
-                  -
+                  −
                 </button>
                 <span class="quantity">{{ item.quantity }}</span>
                 <button
-                  class="btn btn-secondary"
+                  class="quantity-btn quantity-btn-increase"
                   (click)="incrementQuantity(item.productId, item.quantity)"
+                  [attr.aria-label]="'Increase quantity of ' + item.name"
                 >
                   +
                 </button>
