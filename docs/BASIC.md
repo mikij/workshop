@@ -263,36 +263,6 @@ private loadCartFromStorage(): void {
 
 Run the test suite for the basic level:
 
-```bash
-npm run test:basic
-```
-
-The tests cover:
-- ✅ Service initialization
-- ✅ Adding items to cart
-- ✅ Quantity management
-- ✅ Item removal
-- ✅ Cart calculations
-- ✅ LocalStorage persistence
-- ✅ Error handling
-
-### Expected Test Results
-
-```
-ShoppingCartRxjsService
-  ✓ should be created
-  ✓ should start with empty cart
-  ✓ should add item to cart
-  ✓ should increase quantity when adding existing item
-  ✓ should remove item from cart
-  ✓ should update item quantity
-  ✓ should clear all items from cart
-  ✓ should calculate correct cart summary
-  ✓ should save cart to localStorage
-  ✓ should load cart from localStorage
-  ✓ should handle invalid localStorage data gracefully
-```
-
 ## 🧪 Code Examples
 
 ### Adding an Item (Complete Example)
@@ -406,7 +376,6 @@ addItem(product: Product): void {
 
 You've successfully completed the Basic Level when:
 
-- ✅ All tests pass (`npm run test:basic`)
 - ✅ Cart functionality works in the browser
 - ✅ Items persist across page refreshes
 - ✅ Calculations are accurate (including tax and discounts)

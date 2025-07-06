@@ -291,22 +291,6 @@ export class CartIntermediateComponent {
 - ✅ Cart history and restore
 - ✅ Analytics logging in console
 
-### Automated Testing
-
-Run the test suite for the intermediate level:
-
-```bash
-npm run test:intermediate
-```
-
-Expected test coverage:
-- ✅ Signal state management
-- ✅ Computed value calculations
-- ✅ Filtering and sorting logic
-- ✅ Effect execution and cleanup
-- ✅ Integration with localStorage
-- ✅ Complex analytics computations
-
 ## 🧪 Code Examples
 
 ### Computed Cart Summary (Advanced)

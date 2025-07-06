@@ -366,21 +366,6 @@ export class CartAdvancedComponent {
 - ✅ Loading states provide good UX
 - ✅ Error messages are user-friendly
 
-### Automated Testing
-
-Run the comprehensive test suite:
-
-```bash
-npm run test:advanced
-```
-
-Expected test coverage:
-- ✅ Resource API functionality
-- ✅ Advanced cart operations
-- ✅ Analytics calculations
-- ✅ Error handling and recovery
-- ✅ Export/import operations
-- ✅ Performance optimizations
 
 ## 🧪 Code Examples
 
