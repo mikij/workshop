@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { CartItem, CartSummary, Product } from '../../shared/models';
 
+// TODO: Understand these interfaces for advanced cart features
+// LEARNING: TypeScript interfaces define the shape of complex data
 interface CartState {
   items: CartItem[];
   lastUpdated: Date;
@@ -21,375 +23,366 @@ interface CartAnalytics {
 })
 export class AdvancedCartService {
   
+  // TODO: Create versioned cart state signal
+  // HINT: Use signal<CartState>() with initial state
+  // LEARNING: Versioned state enables:
+  // - Optimistic updates
+  // - Conflict detection
+  // - Audit trails
+  // - Rollback capabilities
+  // SYNTAX: private cartState = signal<CartState>({ items: [], lastUpdated: new Date(), version: 1 });
   private cartState = signal<CartState>({
     items: [],
     lastUpdated: new Date(),
     version: 1
   });
 
+  // TODO: Create session and history management signals
+  // HINT: Use signal<Date>() for sessionStartTime
+  // HINT: Use signal<CartState[]>() for cartHistory
+  // LEARNING: Session tracking enables analytics and user behavior insights
+  // SYNTAX: private sessionStartTime = signal<Date>(new Date());
+  // SYNTAX: private cartHistory = signal<CartState[]>([]);
   private sessionStartTime = signal<Date>(new Date());
   private cartHistory = signal<CartState[]>([]);
   private maxHistorySize = 50;
 
-  // Advanced computed properties
+  // TODO: Create computed properties for external access
+  // REQUIREMENTS:
+  // 1. cartItems: Extract items from cartState
+  // 2. cartSummary: Advanced calculations with bulk discounts and luxury tax
+  // 3. cartAnalytics: Session tracking and category analysis
+  // 4. cartMetrics: Performance and usage metrics
+  //
+  // LEARNING: Advanced computed patterns:
+  // - Versioned state access
+  // - Complex business rules
+  // - Multi-level calculations
+  // - Real-time analytics
+  //
+  // SYNTAX HINT for cartItems:
+  // public readonly cartItems = computed(() => this.cartState().items);
   public readonly cartItems = computed(() => this.cartState().items);
-  
+
+  // TODO: Implement advanced cart summary with enterprise business rules
+  // REQUIREMENTS:
+  // 1. Basic calculations: totalItems, totalPrice
+  // 2. Bulk discount logic: quantity > 3 gets minimum 15% discount
+  // 3. Luxury tax system:
+  //    - Items over $1000: 15% tax rate
+  //    - Other items: 8% tax rate
+  // 4. Item-level tax calculation (more precise than flat rate)
+  //
+  // LEARNING: Enterprise-grade business logic
+  // - Complex discount rules
+  // - Multiple tax rates
+  // - Item-level calculations
+  // - Advanced pricing strategies
   public readonly cartSummary = computed<CartSummary>(() => {
-    const items = this.cartItems();
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    // Advanced discount calculation with bulk discounts
-    const totalDiscount = items.reduce((sum, item) => {
-      let itemDiscount = item.discount || 0;
-      
-      // Apply bulk discount for quantities > 3
-      if (item.quantity > 3) {
-        itemDiscount = Math.max(itemDiscount, 15); // At least 15% for bulk
-      }
-      
-      return sum + (item.price * item.quantity * itemDiscount / 100);
-    }, 0);
-    
-    // Dynamic tax calculation based on location and item types
-    const subtotal = totalPrice - totalDiscount;
-    const baseTaxRate = 0.08;
-    const luxuryTaxRate = 0.15; // For items over $1000
-    
-    const tax = items.reduce((sum, item) => {
-      const itemTotal = (item.price * item.quantity) - (item.price * item.quantity * (item.discount || 0) / 100);
-      const taxRate = item.price > 1000 ? luxuryTaxRate : baseTaxRate;
-      return sum + (itemTotal * taxRate);
-    }, 0);
-    
-    const finalPrice = subtotal + tax;
-
-    return {
-      totalItems,
-      totalPrice,
-      totalDiscount,
-      tax,
-      finalPrice
-    };
+    // TODO: Implement advanced cart summary with bulk discounts and luxury tax
+    throw new Error('cartSummary computed not implemented yet');
   });
 
-  // Advanced analytics
+  // TODO: Implement cart analytics computation
+  // REQUIREMENTS:
+  // 1. Calculate total sessions from history
+  // 2. Calculate average session value
+  // 3. Analyze top categories by quantity
+  // 4. Calculate abandonment rate
+  //
+  // LEARNING: Business intelligence with signals
+  // - Real-time analytics
+  // - Session tracking
+  // - Behavioral analysis
+  // - Conversion metrics
+  //
+  // HINTS:
+  // - Get history: this.cartHistory()
+  // - Session value: sum of (price * quantity) for each session
+  // - Category analysis: group items and sort by quantity
+  // - Abandonment rate: (sessions - 1) / sessions * 100
   public readonly cartAnalytics = computed<CartAnalytics>(() => {
-    const history = this.cartHistory();
-    const currentSummary = this.cartSummary();
-    
-    const totalSessions = history.length;
-    const averageSessionValue = totalSessions > 0 
-      ? history.reduce((sum, state) => {
-          const sessionValue = state.items.reduce((itemSum, item) => 
-            itemSum + (item.price * item.quantity), 0);
-          return sum + sessionValue;
-        }, 0) / totalSessions
-      : 0;
-
-    // Category analysis
-    const categoryCount = new Map<string, number>();
-    this.cartItems().forEach(item => {
-      categoryCount.set(item.category, (categoryCount.get(item.category) || 0) + item.quantity);
-    });
-    
-    const topCategories = Array.from(categoryCount.entries())
-      .map(([category, count]) => ({ category, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
-
-    // Simple abandonment rate calculation
-    const abandonmentRate = totalSessions > 0 
-      ? (totalSessions - 1) / totalSessions * 100
-      : 0;
-
-    return {
-      totalSessions,
-      averageSessionValue,
-      topCategories,
-      abandonmentRate
-    };
+    // TODO: Implement analytics calculation
+    throw new Error('cartAnalytics computed not implemented yet');
   });
 
-  // Performance metrics
+  // TODO: Implement performance metrics computation
+  // REQUIREMENTS:
+  // 1. Calculate session duration in minutes
+  // 2. Calculate cart value per minute
+  // 3. Count unique categories
+  // 4. Calculate average item price
+  // 5. Track cart version and last modified time
+  //
+  // LEARNING: Performance monitoring with signals
+  // - Real-time metrics
+  // - User engagement tracking
+  // - Efficiency measurements
+  // - Version tracking
   public readonly cartMetrics = computed(() => {
-    const items = this.cartItems();
-    const summary = this.cartSummary();
-    const sessionDuration = Date.now() - this.sessionStartTime().getTime();
-    
-    return {
-      itemCount: items.length,
-      uniqueCategories: new Set(items.map(item => item.category)).size,
-      averageItemPrice: items.length > 0 ? summary.totalPrice / items.length : 0,
-      sessionDurationMinutes: Math.floor(sessionDuration / (1000 * 60)),
-      cartValuePerMinute: sessionDuration > 0 ? summary.finalPrice / (sessionDuration / (1000 * 60)) : 0,
-      lastModified: this.cartState().lastUpdated,
-      cartVersion: this.cartState().version
-    };
+    // TODO: Implement performance metrics
+    throw new Error('cartMetrics computed not implemented yet');
   });
 
-  // Resource for cart synchronization with server
+  // TODO: Implement Resource API for server synchronization
+  // REQUIREMENTS:
+  // 1. Create syncTrigger signal to control when sync happens
+  // 2. Use resource() to create reactive data fetching
+  // 3. Simulate API call with network delay
+  // 4. Handle success and error states
+  // 5. Include version and timestamp in sync data
+  //
+  // LEARNING: Resource API patterns
+  // - Declarative data fetching
+  // - Automatic loading states
+  // - Error handling and retry logic
+  // - Reactive dependencies
+  //
+  // SYNTAX HINT:
+  // private syncTrigger = signal<number>(0);
+  // public readonly cartSyncResource = resource({
+  //   loader: async () => { ... }
+  // });
   private syncTrigger = signal<number>(0);
   
   public readonly cartSyncResource = resource({
     loader: async () => {
-      try {
-        // TODO: Simulate API call to sync cart with server
-        const cartData = this.cartState();
-        console.log('Syncing cart with server...', cartData);
-        
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate occasional sync failures
-        if (Math.random() < 0.1) {
-          throw new Error('Sync failed');
-        }
-        
-        return {
-          success: true,
-          message: 'Cart synchronized successfully'
-        };
-      } catch (error) {
-        console.error('Cart sync failed:', error);
-        return {
-          success: false,
-          message: 'Failed to sync cart'
-        };
-      }
+      // TODO: Implement proper sync logic
+      return { success: false, message: 'Sync not implemented yet' };
     }
   });
 
+  // TODO: Implement dependency injection
+  // LEARNING: Modern Angular injection
+  // - Use inject() function instead of constructor parameters
+  // - Better for functional programming patterns
+  // - Easier testing and mocking
+  // SYNTAX: private http = inject(HttpClient);
   private http = inject(HttpClient);
-  
+
   constructor() {
+    // TODO: Initialize service
+    // REQUIREMENTS:
+    // 1. Load cart from localStorage
+    // 2. Set up reactive effects
+    //
+    // HINT: Call this.loadCartFromStorage() and this.setupEffects()
     this.loadCartFromStorage();
     this.setupEffects();
   }
 
+  // TODO: Implement advanced effects setup
+  // REQUIREMENTS:
+  // 1. Auto-save effect: Save cart when state changes
+  // 2. History management effect: Track state changes for undo/redo
+  // 3. Sync scheduling effect: Periodic server synchronization
+  // 4. Analytics logging effect: Log cart changes for business intelligence
+  //
+  // LEARNING: Advanced effect patterns
+  // - Multiple effects for different concerns
+  // - Cleanup functions for intervals
+  // - Conditional logic in effects
+  // - Memory management
+  //
+  // SYNTAX HINTS:
+  // effect(() => { this.saveCartToStorage(this.cartState()); });
+  // effect(() => { 
+  //   const interval = setInterval(...);
+  //   return () => clearInterval(interval);
+  // });
   private setupEffects(): void {
-    // Effect for auto-saving cart state
+    // TODO: Implement all effects
+    // Basic auto-save effect to prevent compilation errors
     effect(() => {
       const state = this.cartState();
       this.saveCartToStorage(state);
     });
-
-    // Effect for maintaining cart history
-    effect(() => {
-      const state = this.cartState();
-      if (state.items.length > 0 || this.cartHistory().length === 0) {
-        this.cartHistory.update(history => {
-          const newHistory = [...history, { ...state }];
-          return newHistory.slice(-this.maxHistorySize);
-        });
-      }
-    });
-
-    // Effect for automatic cart sync (every 30 seconds)
-    effect(() => {
-      const state = this.cartState();
-      if (state.items.length > 0) {
-        const syncInterval = setInterval(() => {
-          this.syncTrigger.update(n => n + 1);
-        }, 30000);
-
-        return () => clearInterval(syncInterval);
-      }
-      return undefined;
-    });
-
-    // Effect for cart analytics logging
-    effect(() => {
-      const analytics = this.cartAnalytics();
-      const metrics = this.cartMetrics();
-      
-      console.log('Cart Analytics Update:', {
-        analytics,
-        metrics,
-        timestamp: new Date().toISOString()
-      });
-    });
+    
+    // TODO: Add other effects here
+    console.log('setupEffects called - TODO: Implement all effects');
   }
 
-  // Enhanced cart operations
+  // TODO: Implement enhanced cart operations
+  // LEARNING: Advanced state management
+  // - Versioned state updates
+  // - Centralized state modification
+  // - Automatic metadata updates
+  // - History tracking
+
+  // TODO: Implement enhanced addItem with configurable quantity
+  // REQUIREMENTS:
+  // 1. Support adding multiple quantities at once
+  // 2. Handle existing items by updating quantity
+  // 3. Create new items with proper CartItem structure
+  // 4. Use centralized updateCartState method
+  //
+  // HINTS:
+  // - Default parameter: quantity: number = 1
+  // - Use findIndex for efficient lookup
+  // - Delegate to updateCartState for consistency
   addItem(product: Product, quantity: number = 1): void {
-    const currentState = this.cartState();
-    const existingItemIndex = currentState.items.findIndex(item => item.productId === product.id);
-    
-    let newItems: CartItem[];
-    
-    if (existingItemIndex >= 0) {
-      newItems = currentState.items.map((item, index) =>
-        index === existingItemIndex
-          ? { ...item, quantity: item.quantity + quantity }
-          : item
-      );
-    } else {
-      const newItem: CartItem = {
-        id: this.generateId(),
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity,
-        image: product.image,
-        category: product.category,
-        discount: product.discount
-      };
-      newItems = [...currentState.items, newItem];
-    }
-
-    this.updateCartState(newItems);
+    // TODO: Implement enhanced add item
+    throw new Error('addItem method not implemented yet');
   }
 
+  // TODO: Implement removeItem method
+  // REQUIREMENTS:
+  // 1. Filter out item by productId
+  // 2. Use updateCartState for centralized updates
   removeItem(productId: string): void {
-    const currentState = this.cartState();
-    const newItems = currentState.items.filter(item => item.productId !== productId);
-    this.updateCartState(newItems);
+    // TODO: Implement remove item
+    throw new Error('removeItem method not implemented yet');
   }
 
+  // TODO: Implement updateQuantity method
+  // REQUIREMENTS:
+  // 1. Handle edge case: quantity <= 0 (remove item)
+  // 2. Update item quantity with map transformation
+  // 3. Use updateCartState for centralized updates
   updateQuantity(productId: string, quantity: number): void {
-    if (quantity <= 0) {
-      this.removeItem(productId);
-      return;
-    }
-
-    const currentState = this.cartState();
-    const newItems = currentState.items.map(item =>
-      item.productId === productId
-        ? { ...item, quantity }
-        : item
-    );
-    
-    this.updateCartState(newItems);
+    // TODO: Implement update quantity
+    throw new Error('updateQuantity method not implemented yet');
   }
 
+  // TODO: Implement clearCart method
+  // REQUIREMENTS:
+  // 1. Clear all items by calling updateCartState with empty array
   clearCart(): void {
-    this.updateCartState([]);
+    // TODO: Implement clear cart
+    throw new Error('clearCart method not implemented yet');
   }
 
-  // Advanced operations
+  // TODO: Implement advanced operations
+  // LEARNING: Enterprise cart features
+  // - Item duplication
+  // - Wishlist integration
+  // - Bulk operations
+  // - Cart optimization
+
+  // TODO: Implement duplicateItem method
+  // REQUIREMENTS:
+  // 1. Find item by productId
+  // 2. Create duplicate with new ID and quantity 1
+  // 3. Add to cart using updateCartState
   duplicateItem(productId: string): void {
-    const currentState = this.cartState();
-    const item = currentState.items.find(item => item.productId === productId);
-    
-    if (item) {
-      const duplicatedItem: CartItem = {
-        ...item,
-        id: this.generateId(),
-        quantity: 1
-      };
-      
-      const newItems = [...currentState.items, duplicatedItem];
-      this.updateCartState(newItems);
-    }
+    // TODO: Implement duplicate item
+    throw new Error('duplicateItem method not implemented yet');
   }
 
-  moveToWishlist(productId: string): void {
-    // This would typically interact with a wishlist service
-    this.removeItem(productId);
-    console.log(`Item ${productId} moved to wishlist`);
-  }
-
+  // TODO: Implement applyBulkDiscount method
+  // REQUIREMENTS:
+  // 1. Apply discount to all items or specific category
+  // 2. Use Math.max to ensure discount only increases
+  // 3. Update all affected items with map transformation
+  //
+  // BUSINESS LOGIC:
+  // - categoryOrAll === 'all': Apply to all items
+  // - Otherwise: Apply only to items in specified category
+  // - Discount can only increase, never decrease
   applyBulkDiscount(categoryOrAll: string, discountPercent: number): void {
-    const currentState = this.cartState();
-    const newItems = currentState.items.map(item => {
-      if (categoryOrAll === 'all' || item.category === categoryOrAll) {
-        return {
-          ...item,
-          discount: Math.max(item.discount || 0, discountPercent)
-        };
-      }
-      return item;
-    });
-    
-    this.updateCartState(newItems);
+    // TODO: Implement bulk discount
+    throw new Error('applyBulkDiscount method not implemented yet');
   }
 
-  // History and undo operations
+  // TODO: Implement history and undo operations
+  // LEARNING: Undo/redo patterns with signals
+  // - History management
+  // - State restoration
+  // - Time travel debugging
+
+  // TODO: Implement undoLastChange method
+  // REQUIREMENTS:
+  // 1. Check if history has previous states
+  // 2. Restore previous state from history
+  // 3. Use cartState.set() to restore state
+  //
+  // HINTS:
+  // - Check history.length > 1
+  // - Get previous state: history[history.length - 2]
+  // - Restore with spread operator: { ...previousState }
   undoLastChange(): void {
-    const history = this.cartHistory();
-    if (history.length > 1) {
-      const previousState = history[history.length - 2];
-      this.cartState.set({ ...previousState });
-    }
+    // TODO: Implement undo functionality
+    throw new Error('undoLastChange method not implemented yet');
   }
 
-  restoreCartFromHistory(historyIndex: number): void {
-    const history = this.cartHistory();
-    if (historyIndex >= 0 && historyIndex < history.length) {
-      const stateToRestore = history[historyIndex];
-      this.cartState.set({ ...stateToRestore });
-    }
-  }
+  // TODO: Implement export/import functionality
+  // REQUIREMENTS:
+  // 1. Export: Create JSON string with cart state, analytics, and metadata
+  // 2. Import: Parse JSON and restore cart state with validation
+  //
+  // LEARNING: Data portability and serialization
+  // - JSON serialization
+  // - Data validation
+  // - Error handling
+  // - Metadata preservation
 
-  // Cart optimization
-  optimizeCart(): void {
-    const currentState = this.cartState();
-    
-    // Remove duplicate items (merge quantities)
-    const itemMap = new Map<string, CartItem>();
-    
-    currentState.items.forEach(item => {
-      const existing = itemMap.get(item.productId);
-      if (existing) {
-        itemMap.set(item.productId, {
-          ...existing,
-          quantity: existing.quantity + item.quantity
-        });
-      } else {
-        itemMap.set(item.productId, { ...item });
-      }
-    });
-    
-    const optimizedItems = Array.from(itemMap.values());
-    this.updateCartState(optimizedItems);
-  }
-
-  // Bulk operations
-  updateMultipleQuantities(updates: { productId: string; quantity: number }[]): void {
-    const currentState = this.cartState();
-    const newItems = currentState.items.map(item => {
-      const update = updates.find(u => u.productId === item.productId);
-      return update ? { ...item, quantity: update.quantity } : item;
-    }).filter(item => item.quantity > 0);
-    
-    this.updateCartState(newItems);
-  }
-
-  // Export and import
   exportCart(): string {
-    return JSON.stringify({
-      state: this.cartState(),
-      analytics: this.cartAnalytics(),
-      metrics: this.cartMetrics(),
-      exportDate: new Date().toISOString()
-    }, null, 2);
+    // TODO: Implement cart export
+    // HINT: Use JSON.stringify with cart state, analytics, and export date
+    throw new Error('exportCart method not implemented yet');
   }
 
   importCart(cartData: string): boolean {
-    try {
-      const data = JSON.parse(cartData);
-      if (data.state && data.state.items) {
-        this.cartState.set(data.state);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Failed to import cart:', error);
-      return false;
-    }
+    // TODO: Implement cart import with validation
+    // HINT: Use try/catch with JSON.parse and validate data structure
+    throw new Error('importCart method not implemented yet');
   }
 
-  // Helper methods
+  // TODO: Implement centralized state update method
+  // REQUIREMENTS:
+  // 1. Update cart state with new items
+  // 2. Increment version number
+  // 3. Update lastUpdated timestamp
+  // 4. Trigger all computed signals and effects
+  //
+  // LEARNING: Centralized state management
+  // - Single point of truth for updates
+  // - Automatic metadata management
+  // - Consistent versioning
+  // - Simplified debugging
+  //
+  // SYNTAX HINT:
+  // this.cartState.set({
+  //   items: newItems,
+  //   lastUpdated: new Date(),
+  //   version: currentState.version + 1
+  // });
   private updateCartState(newItems: CartItem[]): void {
-    const currentState = this.cartState();
-    this.cartState.set({
-      items: newItems,
-      lastUpdated: new Date(),
-      version: currentState.version + 1
-    });
+    // TODO: Implement centralized state update
+    throw new Error('updateCartState method not implemented yet');
   }
 
+  // TODO: Implement public API methods for advanced features
+  // LEARNING: External service interface
+  // - Clean API for components
+  // - Encapsulated internal state
+  // - Utility methods
+
+  // TODO: Implement getCartHistory method
+  // REQUIREMENTS: Return read-only access to cart history
+  getCartHistory() {
+    // TODO: Implement history access
+    throw new Error('getCartHistory method not implemented yet');
+  }
+
+  // TODO: Implement triggerSync method
+  // REQUIREMENTS: Manually trigger cart synchronization
+  // HINT: Update syncTrigger signal to trigger resource reload
+  triggerSync(): void {
+    // TODO: Implement manual sync trigger
+    throw new Error('triggerSync method not implemented yet');
+  }
+
+  // TODO: Implement resetSession method
+  // REQUIREMENTS:
+  // 1. Reset session start time to now
+  // 2. Clear cart history
+  resetSession(): void {
+    // TODO: Implement session reset
+    throw new Error('resetSession method not implemented yet');
+  }
+
+  // Helper methods (already implemented for you)
   private generateId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
@@ -412,23 +405,5 @@ export class AdvancedCartService {
         }
       }
     }
-  }
-
-  // Public getters
-  getCartHistory() {
-    return this.cartHistory();
-  }
-
-  triggerSync(): void {
-    this.syncTrigger.update(n => n + 1);
-  }
-
-  getSessionStartTime(): Date {
-    return this.sessionStartTime();
-  }
-
-  resetSession(): void {
-    this.sessionStartTime.set(new Date());
-    this.cartHistory.set([]);
   }
 }

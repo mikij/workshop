@@ -9,169 +9,157 @@ import { CartItem, CartSummary, Product } from '../../shared/models';
 export class ShoppingCartRxjsService {
   // TODO: Create a private BehaviorSubject to hold cart items
   // HINT: Use BehaviorSubject<CartItem[]> and initialize with empty array
+  // LEARNING: BehaviorSubject is perfect for state management because:
+  // - It holds the current state (last emitted value)
+  // - New subscribers immediately get the current state
+  // - It's a special type of Subject that requires an initial value
+  // SYNTAX: private itemsSubject = new BehaviorSubject<CartItem[]>([]);
   private itemsSubject = new BehaviorSubject<CartItem[]>([]);
   
   // TODO: Create a public observable that components can subscribe to
   // HINT: Use asObservable() to expose the subject as an observable
+  // LEARNING: This pattern hides the Subject's next() method from consumers
+  // Components can only read the stream, not modify it directly
+  // SYNTAX: public items$ = this.itemsSubject.asObservable();
   public items$ = this.itemsSubject.asObservable();
 
   constructor() {
     // TODO: Load items from localStorage if available
     // HINT: Call loadCartFromStorage() method
+    // LEARNING: Initialize cart state when service is created
     this.loadCartFromStorage();
   }
 
   // TODO: Implement addItem method
   // REQUIREMENTS:
-  // - Check if item already exists in cart
-  // - If exists: increase quantity by 1
-  // - If not exists: add new item with quantity 1
-  // - Save to localStorage after changes
+  // 1. Check if item already exists in cart (by productId)
+  // 2. If exists: increase quantity by 1 using updateQuantity()
+  // 3. If not exists: create new CartItem and add to cart
+  // 4. Save to localStorage after changes
+  // 
+  // BUSINESS LOGIC:
+  // - Each product can only appear once in cart (different quantities)
+  // - New items start with quantity = 1
+  // - Use immutable patterns (don't mutate existing arrays)
+  //
+  // HINTS:
+  // - Get current items: this.itemsSubject.value
+  // - Find existing: currentItems.find(item => item.productId === product.id)
+  // - Create new CartItem with: id, productId, name, price, quantity, image, category, discount
+  // - Update BehaviorSubject: this.itemsSubject.next(newArray)
+  // - Generate ID: this.generateId()
   addItem(product: Product): void {
-    // TODO: Get current items from the BehaviorSubject
-    const currentItems = this.itemsSubject.value;
-    
-    // TODO: Check if item already exists by productId
-    const existingItem = currentItems.find(item => item.productId === product.id);
-    
-    if (existingItem) {
-      // TODO: If item exists, increase quantity
-      // HINT: Use updateQuantity method with existingItem.quantity + 1
-      this.updateQuantity(product.id, existingItem.quantity + 1);
-    } else {
-      // TODO: If item doesn't exist, create new CartItem
-      // HINT: Create object with id, productId, name, price, quantity, image, category, discount
-      const newItem: CartItem = {
-        id: this.generateId(),
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: product.image,
-        category: product.category,
-        discount: product.discount
-      };
-      
-      // TODO: Add new item to cart and save
-      // HINT: Use spread operator to create new array with existing items + new item
-      this.itemsSubject.next([...currentItems, newItem]);
-      this.saveCartToStorage();
-    }
+    // TODO: Implement this method
+    throw new Error('addItem method not implemented yet');
   }
 
   // TODO: Implement removeItem method
   // REQUIREMENTS:
-  // - Remove item by productId
-  // - Update the BehaviorSubject with filtered array
-  // - Save to localStorage
+  // 1. Remove item by productId from cart
+  // 2. Update the BehaviorSubject with filtered array
+  // 3. Save to localStorage
+  //
+  // HINTS:
+  // - Get current items: this.itemsSubject.value
+  // - Filter out target: currentItems.filter(item => item.productId !== productId)
+  // - Update subject: this.itemsSubject.next(filteredItems)
+  // - Save: this.saveCartToStorage()
   removeItem(productId: string): void {
-    // TODO: Get current items
-    const currentItems = this.itemsSubject.value;
-    
-    // TODO: Filter out the item with matching productId
-    // HINT: Use filter() method to keep items that don't match the productId
-    const updatedItems = currentItems.filter(item => item.productId !== productId);
-    
-    // TODO: Update the BehaviorSubject and save
-    this.itemsSubject.next(updatedItems);
-    this.saveCartToStorage();
+    // TODO: Implement this method
+    throw new Error('removeItem method not implemented yet');
   }
 
   // TODO: Implement updateQuantity method
   // REQUIREMENTS:
-  // - If quantity <= 0, remove the item
-  // - Otherwise, update the item's quantity
-  // - Save to localStorage
+  // 1. If quantity <= 0, remove the item entirely
+  // 2. Otherwise, update the item's quantity
+  // 3. Save to localStorage
+  //
+  // EDGE CASES:
+  // - Handle quantity 0 or negative (remove item)
+  // - Update only the matching item, keep others unchanged
+  //
+  // HINTS:
+  // - Check if quantity <= 0, then call this.removeItem(productId)
+  // - Use map() to transform array: items.map(item => condition ? updatedItem : item)
+  // - Use spread operator for immutable updates: { ...item, quantity }
   updateQuantity(productId: string, quantity: number): void {
-    // TODO: Handle edge case - if quantity is 0 or negative, remove item
-    if (quantity <= 0) {
-      this.removeItem(productId);
-      return;
-    }
-
-    // TODO: Get current items
-    const currentItems = this.itemsSubject.value;
-    
-    // TODO: Update quantity of specific item
-    // HINT: Use map() to transform the array, updating only the matching item
-    const updatedItems = currentItems.map(item =>
-      item.productId === productId
-        ? { ...item, quantity }
-        : item
-    );
-    
-    // TODO: Update the BehaviorSubject and save
-    this.itemsSubject.next(updatedItems);
-    this.saveCartToStorage();
+    // TODO: Implement this method
+    throw new Error('updateQuantity method not implemented yet');
   }
 
   // TODO: Implement clearCart method
   // REQUIREMENTS:
-  // - Set items to empty array
-  // - Save to localStorage
+  // 1. Set items to empty array
+  // 2. Save to localStorage
+  //
+  // HINTS:
+  // - Use this.itemsSubject.next([])
+  // - Call this.saveCartToStorage()
   clearCart(): void {
-    // TODO: Clear all items from cart
-    // HINT: Set the BehaviorSubject to empty array
-    this.itemsSubject.next([]);
-    this.saveCartToStorage();
+    // TODO: Implement this method
+    throw new Error('clearCart method not implemented yet');
   }
 
   // TODO: Implement getCartSummary method that returns Observable<CartSummary>
   // REQUIREMENTS:
-  // - Calculate totalItems (sum of all quantities)
-  // - Calculate totalPrice (sum of price * quantity for each item)
-  // - Calculate totalDiscount (sum of discount amounts)
-  // - Calculate tax (8% of subtotal after discounts)
-  // - Calculate finalPrice (totalPrice - totalDiscount + tax)
+  // 1. Calculate totalItems (sum of all quantities)
+  // 2. Calculate totalPrice (sum of price * quantity for each item)
+  // 3. Calculate totalDiscount (sum of discount amounts)
+  // 4. Calculate tax (8% of subtotal after discounts)
+  // 5. Calculate finalPrice (totalPrice - totalDiscount + tax)
+  //
+  // RXJS PATTERNS:
+  // - Use this.items$.pipe(map(items => { ... }))
+  // - Transform the items array into a CartSummary object
+  // - This creates a reactive stream that updates when cart changes
+  //
+  // BUSINESS LOGIC:
+  // - totalItems: sum of all item quantities
+  // - totalPrice: sum of (price × quantity) for each item
+  // - totalDiscount: sum of (price × quantity × discount%) for each item
+  // - tax: 8% of (totalPrice - totalDiscount)
+  // - finalPrice: totalPrice - totalDiscount + tax
+  //
+  // HINTS:
+  // - Use reduce() for calculations: items.reduce((sum, item) => sum + value, 0)
+  // - Discount calculation: (item.price * item.quantity * (item.discount || 0) / 100)
+  // - Return CartSummary object with all calculated properties
   getCartSummary(): Observable<CartSummary> {
-    return this.items$.pipe(
-      map(items => {
-        // TODO: Calculate total items count
-        // HINT: Use reduce() to sum up all item quantities
-        const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-        
-        // TODO: Calculate total price before discounts
-        // HINT: Use reduce() to sum up (price * quantity) for each item
-        const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
-        // TODO: Calculate total discount amount
-        // HINT: For each item, calculate (price * quantity * discount%) and sum them
-        const totalDiscount = items.reduce((sum, item) => {
-          const discount = item.discount || 0;
-          return sum + (item.price * item.quantity * discount / 100);
-        }, 0);
-        
-        // TODO: Calculate tax (8% of subtotal after discounts)
-        const tax = (totalPrice - totalDiscount) * 0.08;
-        
-        // TODO: Calculate final price
-        const finalPrice = totalPrice - totalDiscount + tax;
-
-        // TODO: Return CartSummary object
-        return {
-          totalItems,
-          totalPrice,
-          totalDiscount,
-          tax,
-          finalPrice
-        };
-      })
-    );
+    // TODO: Implement this method
+    // SYNTAX HINT:
+    // return this.items$.pipe(
+    //   map(items => {
+    //     const totalItems = items.reduce(...);
+    //     const totalPrice = items.reduce(...);
+    //     const totalDiscount = items.reduce(...);
+    //     const tax = (totalPrice - totalDiscount) * 0.08;
+    //     const finalPrice = totalPrice - totalDiscount + tax;
+    //     return { totalItems, totalPrice, totalDiscount, tax, finalPrice };
+    //   })
+    // );
+    throw new Error('getCartSummary method not implemented yet');
   }
 
   // TODO: Implement getTotalItems method
   // REQUIREMENTS:
-  // - Return Observable<number> of total items count
-  // - Use items$ observable and map to total quantity
+  // 1. Return Observable<number> of total items count
+  // 2. Use items$ observable and map to total quantity
+  //
+  // HINTS:
+  // - Use this.items$.pipe(map(items => ...))
+  // - Sum quantities: items.reduce((sum, item) => sum + item.quantity, 0)
   getTotalItems(): Observable<number> {
-    return this.items$.pipe(
-      // TODO: Transform items array to total count
-      // HINT: Use map() and reduce() to sum all quantities
-      map(items => items.reduce((sum, item) => sum + item.quantity, 0))
-    );
+    // TODO: Implement this method
+    // SYNTAX HINT:
+    // return this.items$.pipe(
+    //   map(items => items.reduce((sum, item) => sum + item.quantity, 0))
+    // );
+    throw new Error('getTotalItems method not implemented yet');
   }
 
   // Helper methods (already implemented for you)
+  // These handle utility functions like ID generation and localStorage
   private generateId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
