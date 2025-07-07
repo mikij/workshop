@@ -2,6 +2,46 @@
 
 Welcome to the **Control Flow** module of the Angular Shopping Cart Workshop! This module focuses on mastering Angular's new control flow syntax (@if, @for, @switch) and the powerful @defer directive for performance optimization.
 
+## 🗺️ Workshop Structure & Navigation
+
+This module provides **2 focused routes** to guide your learning journey:
+
+### Route 1: `/control-flow` - Main Learning Space
+**Comprehensive workspace for control flow migration and examples**
+- **Purpose**: Convert structural directives to new control flow syntax with interactive examples
+- **Focus**: @if, @for, @switch implementation, migration, and practical usage
+- **File**: `cart-control-flow.component.ts`
+- **When to use**: Start here for complete control flow learning experience
+
+### Route 2: `/control-flow/performance` - Performance Optimization
+**@defer implementation and performance monitoring**
+- **Purpose**: Learn @defer triggers and measure performance improvements
+- **Focus**: Lazy loading, viewport triggers, performance metrics, optimization strategies
+- **File**: `performance-monitor.component.ts`
+- **When to use**: After mastering control flow syntax, optimize with @defer patterns
+
+## 🎯 Learning Path & Navigation Guide
+
+**📋 Recommended Learning Sequence:**
+
+1. **Start at `/control-flow`** (Complete Migration & Examples - 45 minutes)
+   - Convert all structural directives to new syntax
+   - Complete TODOs for @if, @for, @switch migration
+   - Explore comprehensive examples and patterns
+   - Test cart functionality with modern control flow
+
+2. **Move to `/control-flow/performance`** (Performance Optimization - 30 minutes)
+   - Implement @defer with different triggers
+   - Monitor real-time performance improvements
+   - Learn optimization strategies and best practices
+   - Test performance simulations
+
+**🧭 Navigation Tips:**
+- Start with the main route for comprehensive learning
+- Master control flow syntax before moving to performance
+- Both routes contain working examples and hands-on exercises
+- Use browser navigation to move between routes
+
 ## 🎯 Learning Objectives
 
 By completing this module, you will:
@@ -14,16 +54,39 @@ By completing this module, you will:
 - Optimize template performance through deferred loading
 - Create responsive layouts with intelligent loading strategies
 
+## 🚀 Performance Benefits & Why @defer Matters
+
+**Template Performance Improvements:**
+- **20-30% faster rendering** with new control flow syntax
+- **Reduced memory usage** through intelligent component loading
+- **Better change detection** performance with optimized tracking
+- **Smaller initial bundle** size with @defer lazy loading
+
+**@defer Trigger Strategies:**
+- **`on viewport`**: Load when user scrolls to content (recommended for below-fold content)
+- **`on interaction`**: Load when user interacts with trigger element (great for modals, dropdowns)
+- **`on timer(5s)`**: Load after specified time delay (useful for non-critical analytics)
+- **`on idle`**: Load when browser is idle (perfect for background operations)
+
+**Measurable Performance Gains:**
+- **Initial page load**: 15-40% faster with proper @defer usage
+- **Core Web Vitals**: Improved LCP and FID scores
+- **Memory usage**: 20-30% reduction in initial memory footprint
+- **User experience**: Progressive loading creates smoother interactions
+
 ## 📁 Files You'll Work With
 
-**Primary Files:**
-- `src/app/control-flow/components/cart-control-flow.component.ts` - **STARTER FILE** (main workspace)
-- `src/app/control-flow/components/product-filter.component.ts` - Advanced filtering component
-- `src/app/control-flow/components/cart-analytics.component.ts` - Deferred analytics dashboard
+**Route Components (The 2 Learning Stages):**
+- `src/app/control-flow/components/cart-control-flow.component.ts` - **Route 1** (comprehensive migration workspace with examples)
+- `src/app/control-flow/components/performance-monitor.component.ts` - **Route 2** (@defer performance optimization and monitoring)
 
 **Supporting Files:**
-- `src/app/control-flow/services/control-flow-cart.service.ts` - Cart service with filtering
-- `src/app/control-flow/components/product-recommendations.component.ts` - Deferred recommendations
+- `src/app/control-flow/services/control-flow-cart.service.ts` - Cart service with signal-based state and performance tracking
+- `src/app/control-flow/control-flow.routes.ts` - Route definitions for the 2 learning stages
+
+**CSS Files (Pre-styled):**
+- `cart-control-flow.component.css` - Styling for main workspace and examples
+- `performance-monitor.component.css` - Styling for performance dashboard and metrics
 
 ## 🏗 Architecture Overview
 
@@ -55,30 +118,45 @@ The Control Flow implementation showcases modern template patterns:
 
 ## 🚀 Getting Started
 
-### Step 1: Understand the New Control Flow
+### Step 1: Start Your Development Environment
+```bash
+# Ensure you're in the workshop directory
+cd shopping-cart-workshop
 
-Angular's new control flow provides better performance and developer experience:
+# Start the development server
+npm start
 
-```html
-<!-- Old structural directives -->
-<div *ngIf="user">Welcome {{ user.name }}</div>
-<div *ngFor="let item of items; trackBy: trackById">{{ item.name }}</div>
-
-<!-- New control flow -->
-@if (user()) {
-  <div>Welcome {{ user().name }}</div>
-}
-@for (item of items(); track item.id) {
-  <div>{{ item.name }}</div>
-}
+# Open browser to workshop
+# Navigate to: http://localhost:4200
 ```
 
 ### Step 2: Navigate to Control Flow Module
+1. **Click "Control Flow"** in the main navigation
+2. **You'll land at `/control-flow`** - the main learning space
+3. **Begin with basic migration tasks** in the component file
 
-1. Start the development server: `npm start`
-2. Open your browser to `http://localhost:4200`
-3. Click on "Control Flow" in the navigation
-4. Explore the modern template syntax examples
+### Step 3: Understand the Migration Pattern
+Angular's new control flow provides better performance and cleaner syntax:
+
+```html
+<!-- OLD: Structural directives (what you'll convert FROM) -->
+<div *ngIf="cartService.cartItems().length > 0">
+  <div *ngFor="let item of cartService.cartItems(); trackBy: trackById">
+    {{ item.name }}
+  </div>
+</div>
+
+<!-- NEW: Control flow syntax (what you'll convert TO) -->
+@if (cartService.cartItems().length > 0) {
+  @for (item of cartService.cartItems(); track item.id) {
+    {{ item.name }}
+  }
+}
+```
+
+### Step 4: Follow the Focused Learning Path
+1. **Route 1**: `/control-flow` → Complete migration & examples (START HERE)
+2. **Route 2**: `/control-flow/performance` → @defer optimization & monitoring
 
 ## 📝 Implementation Tasks
 
@@ -323,68 +401,73 @@ Angular's new control flow provides better performance and developer experience:
 </div>
 ```
 
-### Task 6: Performance Monitoring Dashboard
+### Task 6: Performance Monitoring Dashboard (`/control-flow/performance`)
 
-**Goal**: Create a deferred dashboard that monitors template performance.
+**Goal**: Learn @defer triggers and monitor real-time performance improvements.
 
-**Implementation**:
+**What the Performance Route Does:**
+- **Real-time metrics tracking**: Monitor render times, memory usage, and FPS
+- **@defer simulation**: Compare immediate vs deferred loading performance
+- **Interactive performance testing**: Test different @defer triggers
+- **Performance optimization tips**: Learn when to use each @defer trigger
+
+**Key Features to Explore:**
 ```html
-<!-- Performance dashboard - deferred until explicitly requested -->
-@defer (when showPerformanceMetrics()) {
-  <div class="performance-dashboard">
-    <h3>Template Performance Metrics</h3>
-    
-    @if (performanceData()) {
-      <div class="metrics-grid">
-        @for (metric of performanceData().metrics; track metric.name) {
-          <div class="metric-card">
-            <h4>{{ metric.name }}</h4>
-            <span class="value">{{ metric.value }}</span>
-            
-            @switch (metric.status) {
-              @case ('good') {
-                <div class="status good">✓ Good</div>
-              }
-              @case ('warning') {
-                <div class="status warning">⚠ Warning</div>
-              }
-              @case ('critical') {
-                <div class="status critical">⚠ Critical</div>
-              }
-            }
-          </div>
-        }
-      </div>
-      
-      <!-- Performance recommendations -->
-      @if (performanceData().recommendations.length > 0) {
-        <div class="recommendations">
-          <h4>Performance Recommendations</h4>
-          @for (rec of performanceData().recommendations; track rec.id) {
-            <div class="recommendation">
-              <strong>{{ rec.title }}</strong>
-              <p>{{ rec.description }}</p>
-            </div>
+<!-- Real-time performance monitoring -->
+@if (performanceMetrics().length > 0) {
+  <div class="metrics-grid">
+    @for (metric of performanceMetrics(); track metric.name) {
+      <div class="metric-card" [class]="'status-' + metric.status">
+        <h3>{{ metric.name }}</h3>
+        <span class="value">{{ metric.value }}{{ metric.unit }}</span>
+        
+        @switch (metric.status) {
+          @case ('good') {
+            <div class="status-indicator good">✓ Good</div>
           }
-        </div>
-      }
-    } @else {
-      <div class="no-data">
-        <p>No performance data available</p>
+          @case ('warning') {
+            <div class="status-indicator warning">⚠ Warning</div>
+          }
+          @case ('critical') {
+            <div class="status-indicator critical">⚠ Critical</div>
+          }
+        }
       </div>
     }
   </div>
-} @loading {
-  <div class="dashboard-loading">
-    <div class="loading-spinner"></div>
-    <p>Loading performance metrics...</p>
-  </div>
-} @placeholder {
-  <button (click)="enablePerformanceMetrics()">
-    Show Performance Metrics
+}
+
+<!-- @defer simulation tools -->
+<div class="defer-controls">
+  <button (click)="simulateHeavyComponent()">
+    Simulate Heavy Component (Immediate)
   </button>
+  <button (click)="simulateDeferredLoad()">
+    Simulate @defer Load (Optimized)
+  </button>
+</div>
+
+<!-- Compare loading performance -->
+@if (simulationResults().length > 0) {
+  @for (result of simulationResults(); track result.timestamp) {
+    <div class="simulation-item">
+      <strong>{{ result.type }}</strong>
+      <span>Load Time: {{ result.loadTime }}ms</span>
+      <span>Memory: {{ result.memoryUsage }}MB</span>
+      <span [class]="result.deferred ? 'deferred' : 'immediate'">
+        {{ result.deferred ? 'Deferred ✓' : 'Immediate' }}
+      </span>
+    </div>
+  }
 }
 ```
+
+**Performance Testing Workflow:**
+1. **Navigate to `/control-flow/performance`**
+2. **Click "Start Monitoring"** to begin real-time metrics
+3. **Run simulations** to compare immediate vs deferred loading
+4. **Observe performance differences** in load times and memory usage
+5. **Learn @defer trigger patterns** from the optimization tips section
 
 ## ✅ Testing Your Implementation
 
@@ -582,18 +665,39 @@ onComponentLoaded() {
 4. **Monitor performance impact** with browser dev tools
 5. **Test on slower devices** to validate improvements
 
-## 🎯 Success Criteria
+## 🎯 Success Criteria & Migration Phases
 
-You've successfully completed the Control Flow module when:
+### Phase 1: Complete Migration (`/control-flow`) ✅
+**You've completed this phase when:**
+- ✅ All `*ngIf` converted to `@if` syntax
+- ✅ All `*ngFor` converted to `@for` with proper `track` expressions
+- ✅ All `[ngSwitch]` converted to `@switch/@case/@default`
+- ✅ Complex nested @if/@for/@switch combinations work
+- ✅ @empty states display for empty arrays
+- ✅ Local variables ($index, $first, $last) work in @for loops
+- ✅ Cart functionality works identically to before migration
+- ✅ No console errors or template compilation issues
 
-- ✅ All structural directives migrated to new control flow syntax
-- ✅ Complex nested conditions work correctly
-- ✅ @defer improves page load performance measurably
-- ✅ Different @defer triggers work as expected
-- ✅ Loading and error states provide good user experience
-- ✅ Filter system works with new control flow
-- ✅ Performance monitoring shows improvements
-- ✅ Code follows modern Angular template best practices
+**Verification Steps:**
+1. **Add items to cart** → Cart displays correctly with @if
+2. **Remove items** → @for updates properly with tracking
+3. **Use filters** → @switch handles different filter types
+4. **Check empty states** → @else conditions work properly
+5. **Test complex patterns** → Nested control flow works smoothly
+
+### Phase 2: Performance Optimization (`/control-flow/performance`) ✅
+**You've completed this phase when:**
+- ✅ @defer triggers work correctly (viewport, interaction, timer, idle)
+- ✅ Performance monitoring shows measurable improvements
+- ✅ Loading states provide smooth user experience
+- ✅ Heavy components load only when needed
+- ✅ Page load time improves by 15-30%
+
+**Performance Verification:**
+1. **Open DevTools Performance tab**
+2. **Record loading with and without @defer**
+3. **Compare initial bundle size and load times**
+4. **Verify deferred components load on triggers**
 
 ## 💡 Key Takeaways
 

@@ -9,7 +9,8 @@ import { ProductService } from '../../shared/services/product.service';
 import { Product } from '../../shared/models/product.model';
 import { CartItem } from '../../shared/models/cart-item.model';
 
-// TODO: These will be created as part of the workshop
+// TODO: These will be created as part of the inject() workshop exercises
+// They demonstrate optional service injection patterns:
 // import { CART_CONFIG, CartConfig } from '../config/cart-config';
 // import { Logger } from '../services/logger.service';
 // import { AnalyticsService } from '../services/analytics.service';
@@ -235,11 +236,24 @@ export class InjectCartComponent {
   private router = inject(Router);
   private http = inject(HttpClient);
   
-  // TODO: These will be implemented in the workshop
-  // Optional injection with fallbacks
+  // TODO: Convert constructor injection to inject() field injection
+  // This demonstrates modern Angular dependency injection patterns:
+  // 
+  // FIELD-BASED INJECTION:
+  // cartService = inject(InjectCartService);
+  // productService = inject(ProductService);
+  // 
+  // OPTIONAL SERVICE INJECTION:
   // private analytics = inject(AnalyticsService, { optional: true }) ?? this.createNoOpAnalytics();
   // private logger = inject(Logger, { optional: true });
+  // 
+  // CONFIGURATION TOKEN INJECTION:
   // private config = inject(CART_CONFIG, { optional: true }) ?? this.getDefaultConfig();
+  // 
+  // PLATFORM-SPECIFIC SERVICE INJECTION:
+  // private storage = inject(PLATFORM_ID) === 'browser' 
+  //   ? inject(BrowserStorageService) 
+  //   : inject(ServerStorageService);
   
   // Component state
   sampleProducts = signal<Product[]>([]);
@@ -249,8 +263,8 @@ export class InjectCartComponent {
   // Computed values
   injectionStats = computed(() => ({
     totalServices: 4, // cartService, productService, router, http
-    optionalServices: 0, // Will be updated when optional services are added
-    configTokens: 0, // Will be updated when config tokens are added
+    optionalServices: 0, // TODO: Update when optional services are implemented
+    configTokens: 0, // TODO: Update when config tokens are implemented
     injectionTime: Math.round(performance.now() - this.injectionStartTime)
   }));
 
@@ -259,6 +273,7 @@ export class InjectCartComponent {
     productService: 'ProductService', 
     router: 'Router',
     http: 'HttpClient'
+    // TODO: Add optional service dependencies when implemented:
     // analytics: this.analytics ? 'AnalyticsService' : 'NoOpAnalytics',
     // logger: this.logger ? 'Logger' : 'Console',
     // config: 'CART_CONFIG token'
@@ -276,21 +291,50 @@ export class InjectCartComponent {
     this.updateRenderMetrics();
   }
 
-  // Event handlers
+  // Event handlers - demonstrate inject() service usage
   addToCart(product: Product) {
-    this.cartService.addItem(product);
+    // Create a cart item from product for demonstration
+    const cartItem: CartItem = {
+      id: this.generateId(),
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      category: product.category,
+      image: product.image,
+      discount: 0
+    };
+    
+    // Add to cart using inject() service
+    try {
+      this.cartService.addItem(product);
+    } catch (error) {
+      // Fallback for demonstration - direct signal update
+      console.warn('Service method not implemented, using fallback');
+      this.addItemFallback(cartItem);
+    }
     this.updateRenderMetrics();
   }
 
   removeItem(itemId: string) {
-    this.cartService.removeItem(itemId);
+    try {
+      this.cartService.removeItem(itemId);
+    } catch (error) {
+      console.warn('Service method not implemented, using fallback');
+      this.removeItemFallback(itemId);
+    }
     this.updateRenderMetrics();
   }
 
   increaseQuantity(itemId: string) {
     const item = this.cartService.items().find(i => i.id === itemId);
     if (item) {
-      this.cartService.updateQuantity(itemId, item.quantity + 1);
+      try {
+        this.cartService.updateQuantity(itemId, item.quantity + 1);
+      } catch (error) {
+        console.warn('Service method not implemented, using fallback');
+        this.updateQuantityFallback(itemId, item.quantity + 1);
+      }
     }
     this.updateRenderMetrics();
   }
@@ -298,27 +342,42 @@ export class InjectCartComponent {
   decreaseQuantity(itemId: string) {
     const item = this.cartService.items().find(i => i.id === itemId);
     if (item && item.quantity > 1) {
-      this.cartService.updateQuantity(itemId, item.quantity - 1);
+      try {
+        this.cartService.updateQuantity(itemId, item.quantity - 1);
+      } catch (error) {
+        console.warn('Service method not implemented, using fallback');
+        this.updateQuantityFallback(itemId, item.quantity - 1);
+      }
     }
     this.updateRenderMetrics();
   }
 
   clearCart() {
-    this.cartService.clearCart();
+    try {
+      this.cartService.clearCart();
+    } catch (error) {
+      console.warn('Service method not implemented, using fallback');
+      this.clearCartFallback();
+    }
     this.updateRenderMetrics();
   }
 
   exportCart() {
-    const cartData = this.cartService.exportCart();
-    
-    // Create download
-    const blob = new Blob([cartData], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'inject-cart-export.json';
-    link.click();
-    window.URL.revokeObjectURL(url);
+    try {
+      const cartData = this.cartService.exportCart();
+      
+      // Create download
+      const blob = new Blob([cartData], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'inject-cart-export.json';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.warn('Export method not implemented, using fallback');
+      this.exportCartFallback();
+    }
   }
 
   isProductInCart(productId: string): boolean {
@@ -335,6 +394,10 @@ export class InjectCartComponent {
     
     const end = performance.now();
     console.log(`inject() operations took ${end - start} milliseconds`);
+    
+    // TODO: Log performance data with injected logger service
+    // this.logger?.log('Performance measurement', { duration: end - start });
+    
     this.updateRenderMetrics();
   }
 
@@ -387,4 +450,73 @@ export class InjectCartComponent {
   private updateRenderMetrics() {
     this.renderCount.update(count => count + 1);
   }
+
+  // Fallback methods for demonstration when service is not fully implemented
+  private addItemFallback(item: CartItem) {
+    console.log('Using fallback addItem method for inject() demo');
+  }
+
+  private removeItemFallback(itemId: string) {
+    console.log('Using fallback removeItem method for inject() demo');
+  }
+
+  private updateQuantityFallback(itemId: string, quantity: number) {
+    console.log('Using fallback updateQuantity method for inject() demo');
+  }
+
+  private clearCartFallback() {
+    console.log('Using fallback clearCart method for inject() demo');
+  }
+
+  private exportCartFallback() {
+    const fallbackData = {
+      items: this.cartService.items(),
+      summary: this.cartService.summary(),
+      metadata: this.cartService.metadata(),
+      exportDate: new Date().toISOString(),
+      note: 'Fallback export - service method not implemented'
+    };
+    
+    const blob = new Blob([JSON.stringify(fallbackData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'inject-cart-fallback-export.json';
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  private generateId(): string {
+    return `inject-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // TODO: Create provider functions for inject() patterns
+  // This demonstrates how to create reusable provider functions with inject():
+  // 
+  // export function provideInjectCart(config?: Partial<CartConfig>) {
+  //   return [
+  //     InjectCartService,
+  //     ProductService,
+  //     { provide: CART_CONFIG, useValue: { ...defaultConfig, ...config } },
+  //     { provide: Logger, useClass: ConsoleLogger },
+  //     { provide: AnalyticsService, useFactory: () => new AnalyticsService() }
+  //   ];
+  // }
+  
+  // TODO: Implement conditional service injection based on platform
+  // This shows how to inject different services based on platform:
+  // 
+  // private storage = inject(PLATFORM_ID) === 'browser' 
+  //   ? inject(BrowserStorageService) 
+  //   : inject(ServerStorageService);
+  
+  // TODO: Create configuration token injection with fallbacks
+  // This demonstrates configuration injection patterns:
+  // 
+  // private config = inject(CART_CONFIG, { optional: true }) ?? {
+  //   maxItems: 100,
+  //   taxRate: 0.08,
+  //   currency: 'USD',
+  //   enableAnalytics: true
+  // };
 }

@@ -42,294 +42,292 @@ export interface CartMetrics {
 })
 export class ControlFlowCartService {
   
-  // TODO: Create core state signals for control flow integration
-  // REQUIREMENTS:
-  // 1. Cart items for @for loops
-  // 2. Session tracking for performance metrics
-  // 3. Interaction counting for analytics
-  //
+  // CONTROL FLOW INTEGRATION: Core state signals for template syntax
+  // 
   // LEARNING: Signals integrate perfectly with new control flow syntax
   // - items() works directly in @for (item of cartService.items(); track item.id)
   // - Computed values work in @if (cartService.totalItems() > 0)
   // - No need for async pipe or subscription management
   //
-  // SYNTAX HINTS:
-  // private items = signal<CartItem[]>([]);
-  // private sessionStartTime = signal<Date>(new Date());
-  // private interactionCount = signal<number>(0);
+  // TEMPLATE USAGE EXAMPLES:
+  // @for (item of cartService.cartItems(); track item.id) { ... }
+  // @if (cartService.totalItems() > 0) { ... }
+  // @switch (cartService.cartMetrics().sessionDuration) { ... }
   
-  // TODO: Implement cart items signal
-  // HINT: private items = signal<CartItem[]>([]);
+  // Core state signals for control flow integration
   private items = signal<CartItem[]>([]);
-  
-  // TODO: Implement session tracking signal
-  // HINT: private sessionStartTime = signal<Date>(new Date());
   private sessionStartTime = signal<Date>(new Date());
-  
-  // TODO: Implement interaction counter signal
-  // HINT: private interactionCount = signal<number>(0);
   private interactionCount = signal<number>(0);
   
-  // TODO: Create readonly accessors for template usage
-  // REQUIREMENTS:
-  // 1. cartItems for @for loops
-  // 2. sessionStart for time calculations
+  // READONLY ACCESSORS: For template control flow integration
   //
   // LEARNING: These readonly signals can be used directly in templates
   // Template usage: @for (item of cartService.cartItems(); track item.id)
   // Template usage: @if (cartService.cartItems().length > 0)
   //
-  // HINT: public readonly cartItems = this.items.asReadonly();
   public readonly cartItems = this.items.asReadonly();
   public readonly sessionStart = this.sessionStartTime.asReadonly();
   
-  // TODO: Implement computed values for template control flow
-  // REQUIREMENTS:
-  // 1. totalItems for @if conditions
-  // 2. cartSummary for price displays
-  // 3. cartMetrics for performance monitoring
+  // COMPUTED VALUES: For template control flow conditions
   //
   // LEARNING: Computed signals are perfect for control flow conditions
   // - Use in @if: @if (cartService.totalItems() > 0)
   // - Use in @switch: @switch (cartService.cartStatus())
   // - Automatic recalculation when dependencies change
   
-  // TODO: Implement totalItems computed
-  // REQUIREMENTS: Sum all item quantities
-  // HINT: computed(() => this.items().reduce((sum, item) => sum + item.quantity, 0))
-  // USAGE: @if (cartService.totalItems() > 0) { ... }
+  // Total items for @if conditions - USAGE: @if (cartService.totalItems() > 0) { ... }
   public readonly totalItems = computed(() => {
-    // TODO: Implement total items calculation
-    // TEMPORARY: Return 0 - students must implement proper counting
-    return 0;
+    // Sum all item quantities for use in @if conditions
+    return this.items().reduce((sum, item) => sum + item.quantity, 0);
   });
   
-  // TODO: Implement cartSummary computed
-  // REQUIREMENTS:
-  // 1. Calculate totalItems, totalPrice, totalDiscount
-  // 2. Calculate 8% tax rate
-  // 3. Calculate final price
-  //
+  // Cart summary for complex @if/@switch conditions
   // LEARNING: This computed value can drive template decisions
   // Template usage: @if (cartService.cartSummary().finalPrice > 100) { ... }
   public readonly cartSummary = computed<CartSummary>(() => {
-    // TODO: Implement cart summary calculation
-    // TEMPORARY: Return empty summary - students must implement proper calculations
+    const items = this.items();
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totalDiscount = items.reduce((sum, item) => {
+      const discount = item.discount || 0;
+      return sum + (item.price * item.quantity * discount / 100);
+    }, 0);
+    const tax = (totalPrice - totalDiscount) * 0.08; // 8% tax
+    const finalPrice = totalPrice - totalDiscount + tax;
+    
     return {
-      totalItems: 0,
-      totalPrice: 0,
-      totalDiscount: 0,
-      tax: 0,
-      finalPrice: 0
+      totalItems,
+      totalPrice,
+      totalDiscount,
+      tax,
+      finalPrice
     };
   });
   
-  // TODO: Implement performance metrics computed
-  // REQUIREMENTS:
-  // 1. Calculate session duration in minutes
-  // 2. Count items added (from items length)
-  // 3. Track total interactions
-  // 4. Calculate average item price
-  //
+  // Performance metrics for @defer decision making
   // LEARNING: Performance metrics help with @defer decisions
   // Template usage: @defer (when cartService.cartMetrics().sessionDuration > 5)
   public readonly cartMetrics = computed<CartMetrics>(() => {
-    // TODO: Implement performance metrics calculation
-    // TEMPORARY: Return empty metrics - students must implement proper tracking
+    const items = this.items();
+    const now = new Date();
+    const sessionDuration = (now.getTime() - this.sessionStartTime().getTime()) / (1000 * 60); // minutes
+    const itemsAdded = items.length;
+    const itemsRemoved = Math.max(0, this.interactionCount() - itemsAdded); // Rough estimate
+    const totalInteractions = this.interactionCount();
+    const averageItemPrice = items.length > 0 
+      ? items.reduce((sum, item) => sum + item.price, 0) / items.length 
+      : 0;
+    
     return {
-      sessionDuration: 0,
-      itemsAdded: 0,
-      itemsRemoved: 0,
-      totalInteractions: 0,
-      averageItemPrice: 0
+      sessionDuration,
+      itemsAdded,
+      itemsRemoved,
+      totalInteractions,
+      averageItemPrice
     };
   });
   
-  // TODO: Implement performance stats computed for @defer integration
-  // REQUIREMENTS:
-  // 1. Item count for memory estimates
-  // 2. Last update timestamp
-  // 3. Computation time measurement
-  // 4. Memory usage estimation
-  //
+  // Performance stats for @defer optimization
   // LEARNING: Performance stats help determine when to defer expensive components
   // Template usage: @defer (when cartService.performanceStats().itemCount > 10)
   public readonly performanceStats = computed(() => {
-    // TODO: Implement performance statistics
-    // TEMPORARY: Return basic stats - students must implement proper monitoring
+    const items = this.items();
+    const itemCount = items.length;
+    const lastUpdate = new Date().toISOString();
+    const computationTime = this.measureComputationTime();
+    const memoryUsage = this.estimateMemoryUsage(items);
+    
     return {
-      itemCount: 0,
-      lastUpdate: new Date().toISOString(),
-      computationTime: 0,
-      memoryUsage: 0
+      itemCount,
+      lastUpdate,
+      computationTime,
+      memoryUsage
     };
   });
 
   constructor() {
-    // TODO: Initialize service
-    // REQUIREMENTS:
-    // 1. Load cart from storage
-    // 2. Set up reactive effects
-    //
-    // HINT: Call this.loadCartFromStorage() and this.setupEffects()
+    // Initialize service for control flow integration
     this.loadCartFromStorage();
     this.setupEffects();
   }
 
-  // TODO: Implement cart operations that integrate with control flow
+  // CART OPERATIONS: Integrate with control flow templates
   // LEARNING: These methods update signals that automatically update templates
-  
-  // TODO: Implement addItem method
-  // REQUIREMENTS:
-  // 1. Check if item exists (by productId)
-  // 2. Update quantity or add new item
-  // 3. Increment interaction counter
-  // 4. Maintain immutable state
-  //
+  // 
   // TEMPLATE INTEGRATION:
   // - Updates this.items() signal
   // - Automatically triggers @if/@for updates in templates
   // - No manual change detection needed
-  //
-  // HINTS:
-  // - Use this.items() to get current items
-  // - Use this.items.update() to modify state
-  // - Call this.incrementInteraction() to track user actions
+  
   addItem(product: Product): void {
-    // TODO: Implement add item logic
-    throw new Error('addItem method not implemented yet');
+    this.items.update(items => {
+      const existingItem = items.find(item => item.productId === product.id);
+      if (existingItem) {
+        // Update quantity of existing item
+        return items.map(item => 
+          item.productId === product.id 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        // Add new item
+        const newItem: CartItem = {
+          id: this.generateId(),
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          image: product.image || '',
+          category: product.category,
+          discount: product.discount
+        };
+        return [...items, newItem];
+      }
+    });
+    this.incrementInteraction();
   }
 
-  // TODO: Implement removeItem method
-  // REQUIREMENTS:
-  // 1. Remove item by itemId
-  // 2. Update items signal
-  // 3. Increment interaction counter
-  //
-  // HINT: Use this.items.update(items => items.filter(...))
   removeItem(itemId: string): void {
-    // TODO: Implement remove item logic
-    throw new Error('removeItem method not implemented yet');
+    this.items.update(items => items.filter(item => item.id !== itemId));
+    this.incrementInteraction();
   }
 
-  // TODO: Implement updateQuantity method
-  // REQUIREMENTS:
-  // 1. Handle quantity <= 0 (remove item)
-  // 2. Update item quantity
-  // 3. Increment interaction counter
-  //
-  // HINT: Use this.items.update(items => items.map(...))
   updateQuantity(itemId: string, quantity: number): void {
-    // TODO: Implement update quantity logic
-    throw new Error('updateQuantity method not implemented yet');
+    if (quantity <= 0) {
+      this.removeItem(itemId);
+      return;
+    }
+    
+    this.items.update(items => 
+      items.map(item => 
+        item.id === itemId 
+          ? { ...item, quantity }
+          : item
+      )
+    );
+    this.incrementInteraction();
   }
 
-  // TODO: Implement clearCart method
-  // REQUIREMENTS:
-  // 1. Clear all items
-  // 2. Increment interaction counter
-  //
-  // HINT: Use this.items.set([])
   clearCart(): void {
-    // TODO: Implement clear cart logic
-    throw new Error('clearCart method not implemented yet');
+    this.items.set([]);
+    this.incrementInteraction();
   }
 
-  // TODO: Implement analytics and filtering methods for control flow
+  // ANALYTICS METHODS: Provide data for complex template conditions
   // LEARNING: These methods provide data for complex template conditions
   
-  // TODO: Implement getFilteredItems method
-  // REQUIREMENTS:
-  // 1. Filter by category (optional)
-  // 2. Filter by max price (optional)
-  // 3. Return filtered CartItem array
-  //
-  // TEMPLATE USAGE:
-  // @for (item of cartService.getFilteredItems('electronics'); track item.id)
+  // TEMPLATE USAGE: @for (item of cartService.getFilteredItems('electronics'); track item.id)
   getFilteredItems(category?: string, maxPrice?: number): CartItem[] {
-    // TODO: Implement filtering logic
-    throw new Error('getFilteredItems method not implemented yet');
+    let filteredItems = this.items();
+    
+    if (category) {
+      filteredItems = filteredItems.filter(item => 
+        item.category === category
+      );
+    }
+    
+    if (maxPrice !== undefined) {
+      filteredItems = filteredItems.filter(item => 
+        item.price <= maxPrice
+      );
+    }
+    
+    return filteredItems;
   }
 
-  // TODO: Implement getTopCategories method
-  // REQUIREMENTS:
-  // 1. Group items by category
-  // 2. Calculate count and total value per category
-  // 3. Sort by total value descending
-  // 4. Return array of { category, count, total }
-  //
   // TEMPLATE USAGE:
   // @for (cat of cartService.getTopCategories(); track cat.category) {
   //   @if (cat.total > 100) { ... }
   // }
   getTopCategories(): Array<{ category: string; count: number; total: number }> {
-    // TODO: Implement category analysis
-    throw new Error('getTopCategories method not implemented yet');
+    const categoryMap = new Map<string, { count: number; total: number }>();
+    
+    this.items().forEach(item => {
+      const category = item.category;
+      const itemTotal = item.price * item.quantity;
+      
+      if (categoryMap.has(category)) {
+        const existing = categoryMap.get(category)!;
+        existing.count += item.quantity;
+        existing.total += itemTotal;
+      } else {
+        categoryMap.set(category, { count: item.quantity, total: itemTotal });
+      }
+    });
+    
+    return Array.from(categoryMap.entries())
+      .map(([category, data]) => ({ category, ...data }))
+      .sort((a, b) => b.total - a.total);
   }
 
-  // TODO: Implement reactive effects for control flow integration
-  // REQUIREMENTS:
-  // 1. Auto-save cart to localStorage
-  // 2. Performance logging for monitoring
-  //
+  // REACTIVE EFFECTS: Support control flow template decisions
   // LEARNING: Effects automatically run when signals change
   // Perfect for side effects that support template decisions
   private setupEffects(): void {
-    // TODO: Implement auto-save effect
-    // HINT: effect(() => { const items = this.items(); /* save logic */ });
+    // Auto-save cart to localStorage when items change
     effect(() => {
-      // TODO: Save cart when items change
-      console.log('Auto-save effect - TODO: Implement storage persistence');
+      const items = this.items();
+      try {
+        localStorage.setItem('control-flow-cart', JSON.stringify(items));
+      } catch (error) {
+        console.warn('Failed to save cart to localStorage:', error);
+      }
     });
 
-    // TODO: Implement performance logging effect
-    // HINT: effect(() => { const stats = this.performanceStats(); /* log logic */ });
+    // Log performance metrics for monitoring and @defer optimization
     effect(() => {
-      // TODO: Log performance metrics for @defer optimization
-      console.log('Performance effect - TODO: Implement metrics logging');
+      const stats = this.performanceStats();
+      if (stats.itemCount > 5) {
+        console.log('Performance metrics (for @defer optimization):', stats);
+      }
     });
   }
 
-  // TODO: Implement storage operations
-  // REQUIREMENTS:
-  // 1. Save cart to localStorage with 'control-flow-cart' key
-  // 2. Load cart from localStorage on initialization
-  // 3. Handle errors gracefully
-  
+  // STORAGE OPERATIONS: Support cart persistence
   private loadCartFromStorage(): void {
-    // TODO: Implement cart loading from localStorage
-    // HINT: Use localStorage.getItem() and JSON.parse()
-    console.log('loadCartFromStorage - TODO: Implement storage loading');
+    try {
+      const stored = localStorage.getItem('control-flow-cart');
+      if (stored) {
+        const items = JSON.parse(stored);
+        this.items.set(items);
+      }
+    } catch (error) {
+      console.warn('Failed to load cart from storage:', error);
+    }
   }
 
-  // TODO: Implement utility methods
-  
+  // UTILITY METHODS
   private generateId(): string {
-    // TODO: Generate unique ID for cart items
-    // HINT: Use timestamp and random string
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private incrementInteraction(): void {
-    // TODO: Increment interaction counter for analytics
-    // HINT: Use this.interactionCount.update(count => count + 1)
-    throw new Error('incrementInteraction method not implemented yet');
+    this.interactionCount.update(count => count + 1);
   }
 
-  // TODO: Implement performance measurement methods
+  // Additional methods needed by template
+  public totalPrice(): number {
+    return this.cartSummary().totalPrice;
+  }
+
+  public operationCount(): number {
+    return this.interactionCount();
+  }
+
+  // PERFORMANCE MEASUREMENT: Support @defer decision making in templates
   // LEARNING: These support @defer decision making in templates
   
+  // TEMPLATE USAGE: @defer (when cartService.performanceStats().computationTime < 10)
   private measureComputationTime(): number {
-    // TODO: Measure how long cart computations take
-    // HINT: Use performance.now() before and after cartSummary()
-    // TEMPLATE USAGE: @defer (when cartService.performanceStats().computationTime < 10)
-    return 0;
+    const start = performance.now();
+    this.cartSummary(); // Trigger computation
+    const end = performance.now();
+    return Math.round(end - start);
   }
 
+  // TEMPLATE USAGE: @defer (when cartService.performanceStats().memoryUsage < 1000)
   private estimateMemoryUsage(items: CartItem[]): number {
-    // TODO: Estimate memory usage of cart items
-    // HINT: Multiply item count by estimated bytes per item
-    // TEMPLATE USAGE: @defer (when cartService.performanceStats().memoryUsage < 1000)
-    return 0;
+    const bytesPerItem = 200; // Estimate
+    return items.length * bytesPerItem;
   }
 }

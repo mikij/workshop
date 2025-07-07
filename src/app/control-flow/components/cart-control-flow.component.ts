@@ -28,41 +28,55 @@ import { CartItem } from '../../shared/models/cart-item.model';
     <div class="control-flow-container">
       <header class="page-header">
         <h1>Control Flow - Modern Template Syntax</h1>
-        <p>Learn &#64;if, &#64;for, &#64;switch, and &#64;defer patterns</p>
+<!--        <p>Learn @if, @for, @switch, and @defer patterns</p>-->
       </header>
 
       <!-- TODO: Convert these structural directives to new control flow -->
-      <!-- 
-      Current implementation uses old syntax - convert to:
-      &#64;if, &#64;for, &#64;switch, &#64;defer 
+      <!--
+      Educational Note: Angular's new control flow syntax provides:
+      - @if / @else - Replaces *ngIf with cleaner syntax
+      - @for - Replaces *ngFor with mandatory track expression
+      - @switch / @case / @default - Replaces ngSwitch directives
+      - @defer - New feature for lazy loading parts of templates
       -->
 
-      <!-- Filter Controls using @switch -->
+      <!-- Filter Controls Section -->
       <div class="filter-section">
         <h2>Filter Controls</h2>
-        
-        <!-- TODO: Convert ngSwitch to &#64;switch -->
+
+        <!-- TODO: Convert ngSwitch to @switch syntax -->
+        <!--
+        Educational Note: The new @switch syntax looks like:
+        @switch (expression) - switches on expression value
+        @case (value1) - matches specific value
+        @case (value2) - matches another value
+        @default - default case when no match
+        -->
         <div [ngSwitch]="activeFilterType()">
           <div *ngSwitchCase="'category'">
             <h3>Filter by Category</h3>
-            <!-- TODO: Convert ngFor to &#64;for -->
+            <!-- TODO: Convert ngFor to @for with track -->
+            <!--
+            Educational Note: @for requires a track expression:
+            @for (item of items; track item.id) - loops with tracking
+            -->
             <button *ngFor="let category of availableCategories(); trackBy: trackByCategory"
                     [class.active]="selectedCategory() === category"
                     (click)="setCategory(category)">
               {{ category }}
             </button>
           </div>
-          
+
           <div *ngSwitchCase="'price'">
             <h3>Filter by Price Range</h3>
-            <input type="range" 
-                   [value]="priceRange().max" 
-                   min="0" 
+            <input type="range"
+                   [value]="priceRange().max"
+                   min="0"
                    max="1000"
                    (input)="updatePriceRange($event)">
             <span>Up to {{ priceRange().max | currency }}</span>
           </div>
-          
+
           <div *ngSwitchDefault>
             <h3>Select Filter Type</h3>
             <button (click)="setFilterType('category')">Category</button>
@@ -71,42 +85,48 @@ import { CartItem } from '../../shared/models/cart-item.model';
         </div>
       </div>
 
-      <!-- Cart Status using &#64;if -->
+      <!-- Cart Status Section -->
       <div class="cart-status">
-        <!-- TODO: Convert ngIf to &#64;if -->
+        <!-- TODO: Convert ngIf to @if -->
+        <!--
+        Educational Note: The new @if syntax:
+        @if (condition) - shows content when true
+        @else - shows alternative content
+        -->
         <div *ngIf="cartService.cartItems().length > 0; else emptyCart">
           <h2>Shopping Cart ({{ cartService.totalItems() }} items)</h2>
-          
-          <!-- Cart Items using &#64;for -->
+          <p class="cart-total">Total: {{ cartService.totalPrice() | currency }}</p>
+
+          <!-- Cart Items List -->
           <div class="cart-items">
-            <!-- TODO: Convert ngFor to &#64;for with proper tracking -->
-            <div *ngFor="let item of cartService.cartItems(); trackBy: trackByItemId" 
+            <!-- TODO: Convert ngFor to @for with track -->
+            <div *ngFor="let item of cartService.cartItems(); trackBy: trackByItemId"
                  class="cart-item">
               <h4>{{ item.name }}</h4>
               <span>{{ item.price | currency }}</span>
-              
-              <!-- Conditional content using &#64;if -->
-              <!-- TODO: Convert ngIf to &#64;if -->
+
+              <!-- Conditional Discount Badge -->
+              <!-- TODO: Convert ngIf to @if -->
               <div *ngIf="item.discount && item.discount > 0" class="discount-badge">
                 {{ item.discount }}% OFF
               </div>
-              
+
               <div class="quantity-controls">
-                <!-- TODO: Convert ngIf to &#64;if -->
+                <!-- TODO: Convert ngIf/else to @if/@else -->
                 <button *ngIf="item.quantity > 1; else removeButton"
                         (click)="decreaseQuantity(item.id)">-</button>
-                
+
                 <ng-template #removeButton>
                   <button (click)="removeItem(item.id)" class="remove">Remove</button>
                 </ng-template>
-                
+
                 <span>{{ item.quantity }}</span>
                 <button (click)="increaseQuantity(item.id)">+</button>
               </div>
             </div>
           </div>
         </div>
-        
+
         <ng-template #emptyCart>
           <div class="empty-cart">
             <h3>Your cart is empty</h3>
@@ -115,29 +135,39 @@ import { CartItem } from '../../shared/models/cart-item.model';
         </ng-template>
       </div>
 
-      <!-- Product List with &#64;defer -->
+      <!-- Product List Section -->
       <div class="product-section">
         <h2>Available Products</h2>
-        
-        <!-- TODO: Implement &#64;defer for heavy product list -->
-        <!-- Current: Loads immediately -->
+
+        <!-- TODO: Implement @defer for heavy product list -->
+        <!--
+        Educational Note: @defer can lazy load heavy content:
+        @defer (on viewport) - loads content when in viewport
+        @placeholder - shows light placeholder initially
+        @loading (minimum 100ms) - shows loading state
+        @error - shows error state if loading fails
+
+        Exercise: Convert this to use @defer with viewport trigger
+        -->
         <div class="product-grid" *ngIf="!isLoading(); else loadingTemplate">
-          <div *ngFor="let product of filteredProducts(); trackBy: trackByProductId" 
+          <!-- TODO: Convert ngFor to @for -->
+          <div *ngFor="let product of filteredProducts(); trackBy: trackByProductId"
                class="product-item">
-            <!-- TODO: Replace with product-card component when created -->
+            <!-- Placeholder product card until component is created -->
             <div class="placeholder-product-card">
               <h4>{{ product.name }}</h4>
               <p>{{ product.price | currency }}</p>
               <p>{{ product.description }}</p>
               <div class="actions">
-                <button 
+                <!-- TODO: Convert ngIf/else to @if/@else -->
+                <button
                   *ngIf="!isProductInCart(product.id); else removeBtn"
                   (click)="addToCart(product)"
                   class="add-btn">
                   Add to Cart
                 </button>
                 <ng-template #removeBtn>
-                  <button 
+                  <button
                     (click)="removeFromCart(product.id)"
                     class="remove-btn">
                     Remove from Cart
@@ -147,34 +177,106 @@ import { CartItem } from '../../shared/models/cart-item.model';
             </div>
           </div>
         </div>
-        
+
         <ng-template #loadingTemplate>
-          <!-- TODO: Replace with loading-skeleton component when created -->
           <div class="placeholder-loading">
             <p>Loading products...</p>
           </div>
         </ng-template>
       </div>
 
-      <!-- TODO: Add &#64;defer examples for heavy components -->
-      <!-- Performance Analytics (should be deferred) -->
+      <!-- Performance Analytics Section -->
       <div class="analytics-section">
         <h2>Performance Analytics</h2>
-        <!-- TODO: Implement &#64;defer with viewport trigger -->
-        <div>
-          <p>Analytics will load when in viewport</p>
-          <!-- Heavy analytics component should go here -->
+        <!-- TODO: Implement @defer with condition trigger -->
+        <!--
+        Educational Note: @defer can use conditions:
+        @defer (when showPerformanceMetrics()) - loads when condition is true
+
+        Exercise: Defer this section until showPerformanceMetrics() is true
+        -->
+        <div class="analytics-placeholder">
+          <h3>Detailed Performance Metrics</h3>
+          <div class="metric-item">
+            <span>Components Rendered:</span>
+            <strong>{{ renderCount() }}</strong>
+          </div>
+          <div class="metric-item">
+            <span>Average Render Time:</span>
+            <strong>{{ lastRenderTime() }}ms</strong>
+          </div>
+          <div class="metric-item">
+            <span>Cart Operations:</span>
+            <strong>{{ cartService.operationCount() }}</strong>
+          </div>
+          <div class="metric-item">
+            <span>Memory Usage:</span>
+            <strong>~{{ estimatedMemoryUsage() }}KB</strong>
+          </div>
         </div>
       </div>
 
-      <!-- TODO: Add &#64;defer examples with different triggers -->
-      <!-- Recommendations (should be deferred with interaction trigger) -->
+      <!-- Recommendations Section -->
       <div class="recommendations-section">
         <h2>Product Recommendations</h2>
-        <!-- TODO: Implement &#64;defer with interaction trigger -->
-        <div>
-          <p>Recommendations will load on interaction</p>
-          <!-- Heavy recommendations component should go here -->
+        <!-- TODO: Implement @defer with interaction and timer triggers -->
+        <!--
+        Educational Note: @defer supports multiple triggers:
+        @defer (on interaction; on timer(5s)) - loads on user interaction OR after 5 seconds
+
+        Exercise: Defer recommendations with both interaction and timer triggers
+        -->
+        <div class="recommendations-placeholder">
+          <h3>Based on your cart</h3>
+          <div class="recommendation-list">
+            <!-- TODO: Convert ngFor to @for when implementing defer -->
+            <div *ngFor="let product of getRecommendations(); trackBy: trackByProductId"
+                 class="recommendation-item">
+              <h4>{{ product.name }}</h4>
+              <p>{{ product.price | currency }}</p>
+              <button (click)="addToCart(product)">Add to Cart</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart History Section -->
+      <div class="history-section">
+        <h2>Recent Cart Activity</h2>
+        <!-- TODO: Implement @defer with timer trigger -->
+        <!--
+        Educational Note: Timer-based defer:
+        @defer (on timer(10s)) - loads after 10 seconds
+
+        Exercise: Defer cart history to load after 10 seconds
+        -->
+        <div class="history-placeholder">
+          <h3>Your Recent Items</h3>
+          <ul class="history-list">
+            <li>Added "Gaming Laptop" - 2 minutes ago</li>
+            <li>Removed "Wireless Mouse" - 5 minutes ago</li>
+            <li>Updated quantity for "USB-C Hub" - 10 minutes ago</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Optimization Suggestions Section -->
+      <div class="optimization-section">
+        <h2>Cart Optimization</h2>
+        <!-- TODO: Implement @defer with idle trigger -->
+        <!--
+        Educational Note: Idle-based defer:
+        @defer (on idle) - loads when browser is idle
+
+        Exercise: Defer optimization suggestions until browser is idle
+        -->
+        <div class="optimization-placeholder">
+          <h3>Save Money on Your Cart</h3>
+          <ul class="optimization-list">
+            <li>Bundle "Gaming Laptop" with "Laptop Stand" for 10% off</li>
+            <li>Free shipping on orders over $100 (add {{ getFreeShippingAmount() | currency }} more)</li>
+            <li>Use code "SAVE20" for 20% off accessories</li>
+          </ul>
         </div>
       </div>
 
@@ -184,12 +286,14 @@ import { CartItem } from '../../shared/models/cart-item.model';
         <button (click)="togglePerformanceMetrics()">
           {{ showPerformanceMetrics() ? 'Hide' : 'Show' }} Performance Metrics
         </button>
-        
-        <!-- TODO: Convert ngIf to &#64;if -->
+
+        <!-- TODO: Convert ngIf to @if -->
         <div *ngIf="showPerformanceMetrics()" class="performance-metrics">
           <h4>Template Performance</h4>
           <p>Render Count: {{ renderCount() }}</p>
           <p>Last Render: {{ lastRenderTime() }}ms</p>
+          <p>Cart Items: {{ cartService.totalItems() }}</p>
+          <p>Products Loaded: {{ products().length }}</p>
         </div>
       </div>
     </div>
@@ -212,29 +316,29 @@ export class CartControlFlowComponent {
   priceRange = signal({ min: 0, max: 1000 });
   isLoading = signal(false);
   showPerformanceMetrics = signal(false);
-  
+
   // Performance monitoring
   renderCount = signal(0);
   lastRenderTime = signal(0);
-  
+
   // Products data
   products = signal<Product[]>([]);
-  
+
   // Computed values
   availableCategories = computed(() => {
     const categories = this.products().map(p => p.category);
     return [...new Set(categories)];
   });
-  
+
   filteredProducts = computed(() => {
     let filtered = this.products();
-    
+
     if (this.selectedCategory() !== 'all') {
       filtered = filtered.filter(p => p.category === this.selectedCategory());
     }
-    
+
     filtered = filtered.filter(p => p.price <= this.priceRange().max);
-    
+
     return filtered;
   });
 
@@ -257,7 +361,10 @@ export class CartControlFlowComponent {
   }
 
   removeFromCart(productId: string) {
-    this.cartService.removeItem(productId);
+    const item = this.cartService.cartItems().find(item => item.productId === productId);
+    if (item) {
+      this.cartService.removeItem(item.id);
+    }
   }
 
   increaseQuantity(itemId: string) {
@@ -299,6 +406,29 @@ export class CartControlFlowComponent {
     return product.id;
   }
 
+  // Helper methods for new sections
+  getRecommendations(): Product[] {
+    // Return recommendations based on cart items
+    const cartCategories = this.cartService.cartItems().map(item => item.category);
+    return this.products().filter(product =>
+      cartCategories.includes(product.category) &&
+      !this.isProductInCart(product.id)
+    ).slice(0, 3);
+  }
+
+  estimatedMemoryUsage(): number {
+    // Estimate memory usage based on data
+    const itemCount = this.cartService.cartItems().length;
+    const productCount = this.products().length;
+    return Math.round((itemCount * 2 + productCount * 1.5) * 10) / 10;
+  }
+
+  getFreeShippingAmount(): number {
+    const total = this.cartService.cartSummary().totalPrice;
+    const freeShippingThreshold = 100;
+    return Math.max(0, freeShippingThreshold - total);
+  }
+
   // Private methods
   private loadProducts() {
     this.isLoading.set(true);
@@ -316,7 +446,7 @@ export class CartControlFlowComponent {
 
   private updateRenderMetrics() {
     const start = performance.now();
-    
+
     // Use setTimeout to capture render completion
     setTimeout(() => {
       const end = performance.now();
