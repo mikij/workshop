@@ -230,10 +230,10 @@ import { CartItem } from '../../shared/models/cart-item.model';
           </div>
           
           <div class="tool">
-            <h4>Performance</h4>
-            <p>Component renders: {{ renderCount() }}</p>
-            <p>Last render: {{ lastRenderTime() }}ms</p>
-            <button (click)="measurePerformance()">Measure Performance</button>
+            <h4>Standalone Architecture</h4>
+            <p>Module-free components</p>
+            <p>Direct service injection</p>
+            <p>Optimized tree-shaking</p>
           </div>
         </div>
       </section>
@@ -249,13 +249,10 @@ export class StandaloneCartComponent {
     private productService: ProductService
   ) {
     this.loadSampleProducts();
-    this.updateRenderMetrics();
   }
 
   // Component state
   sampleProducts = signal<Product[]>([]);
-  renderCount = signal(0);
-  lastRenderTime = signal(0);
 
   // Computed values
   isEmpty = computed(() => this.cartService.items().length === 0);
@@ -264,12 +261,10 @@ export class StandaloneCartComponent {
   // Event handlers
   addToCart(product: Product) {
     this.cartService.addItem(product);
-    this.updateRenderMetrics();
   }
 
   removeItem(itemId: string) {
     this.cartService.removeItem(itemId);
-    this.updateRenderMetrics();
   }
 
   increaseQuantity(itemId: string) {
@@ -277,7 +272,6 @@ export class StandaloneCartComponent {
     if (item) {
       this.cartService.updateQuantity(itemId, item.quantity + 1);
     }
-    this.updateRenderMetrics();
   }
 
   decreaseQuantity(itemId: string) {
@@ -285,28 +279,14 @@ export class StandaloneCartComponent {
     if (item) {
       this.cartService.updateQuantity(itemId, item.quantity - 1);
     }
-    this.updateRenderMetrics();
   }
 
   clearCart() {
     this.cartService.clearCart();
-    this.updateRenderMetrics();
   }
 
   isProductInCart(productId: string): boolean {
     return this.cartService.items().some(item => item.productId === productId);
-  }
-
-  measurePerformance() {
-    const start = performance.now();
-    
-    // Simulate some operations
-    this.cartService.summary();
-    this.cartService.items();
-    
-    const end = performance.now();
-    this.lastRenderTime.set(Math.round(end - start));
-    this.updateRenderMetrics();
   }
 
   // Track by functions (will be simplified with @for)
@@ -357,7 +337,4 @@ export class StandaloneCartComponent {
     });
   }
 
-  private updateRenderMetrics() {
-    this.renderCount.update(count => count + 1);
-  }
 }

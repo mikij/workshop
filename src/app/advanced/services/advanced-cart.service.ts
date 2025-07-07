@@ -991,9 +991,25 @@ export class AdvancedCartService {
       if (savedState) {
         try {
           const state = JSON.parse(savedState) as CartState;
-          this.cartState.set(state);
+          
+          // CRITICAL FIX: Convert lastUpdated string back to Date object
+          // When JSON.parse() deserializes the state, Date objects become strings
+          // We need to explicitly convert them back to Date instances
+          const restoredState: CartState = {
+            ...state,
+            lastUpdated: new Date(state.lastUpdated), // Convert string to Date
+            items: state.items || [] // Ensure items array exists
+          };
+          
+          this.cartState.set(restoredState);
         } catch (error) {
           console.error('Error loading cart from storage:', error);
+          // Initialize with default state if loading fails
+          this.cartState.set({
+            items: [],
+            lastUpdated: new Date(),
+            version: 1
+          });
         }
       }
     }
