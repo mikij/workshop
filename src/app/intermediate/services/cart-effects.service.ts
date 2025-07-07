@@ -7,6 +7,7 @@ import { CartItem, Product } from '../../shared/models';
 export class CartEffectsService {
   
   private items = signal<CartItem[]>([]);
+  // Effects service only manages wishlist, recently viewed, and history
   private wishlist = signal<string[]>([]);
   private recentlyViewed = signal<Product[]>([]);
   private cartHistory = signal<CartItem[][]>([]);

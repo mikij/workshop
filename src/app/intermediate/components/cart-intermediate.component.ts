@@ -31,25 +31,23 @@ export class CartIntermediateComponent implements OnInit {
     console.log('Cart Intermediate Component initialized');
   }
 
-  // Cart operations - Fixed: Only update the main cart service
+  // Cart operations - Use single source of truth (main cart service)
   onAddToCart(product: Product): void {
     this.cartService.addItem(product);
-    // Effects service should react to cart changes, not be manually updated
+    // Also add to recently viewed via effects service
+    this.effectsService.addToRecentlyViewed(product);
   }
 
   onRemoveFromCart(productId: string): void {
     this.cartService.removeItem(productId);
-    // Effects service should react to cart changes, not be manually updated
   }
 
   onUpdateQuantity(productId: string, quantity: number): void {
     this.cartService.updateQuantity(productId, quantity);
-    // Effects service should react to cart changes, not be manually updated
   }
 
   onClearCart(): void {
     this.cartService.clearCart();
-    // Effects service should react to cart changes, not be manually updated
   }
 
   incrementQuantity(productId: string, currentQuantity: number): void {

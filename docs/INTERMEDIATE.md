@@ -22,7 +22,6 @@ By completing this level, you will:
 
 **Reference Files:**
 - `src/app/basic/services/shopping-cart-signals.service.ts` - Basic signals solution
-- `src/app/intermediate/services/cart-computed.solution.ts` - **SOLUTION** (don't peek!)
 
 ## 🏗 Architecture Overview
 
@@ -43,17 +42,20 @@ The Signals implementation introduces a more declarative approach:
 ┌─────────────────────────────────────────────┐
 │              Service Layer                  │
 │  ┌─────────────────────────────────────┐   │
-│  │     CartComputedService             │   │
+│  │     CartComputedService (Primary)   │   │
 │  │  - signal<CartItem[]>               │   │
 │  │  - computed<CartSummary>            │   │
 │  │  - computed<FilteredItems>          │   │
 │  │  - effect(() => persistCart())     │   │
 │  └─────────────────────────────────────┘   │
+│                    ▲                       │
+│                    │ injects               │
 │  ┌─────────────────────────────────────┐   │
 │  │     CartEffectsService              │   │
-│  │  - Advanced effects patterns       │   │
+│  │  - Consumes CartComputedService     │   │
 │  │  - Wishlist management             │   │
 │  │  - History tracking                │   │
+│  │  - Recently viewed items           │   │
 │  └─────────────────────────────────────┘   │
 └─────────────────────────────────────────────┘
 ```
@@ -215,30 +217,17 @@ constructor() {
 
 ### Task 6: Advanced Effects Service
 
-**Goal**: Implement the `CartEffectsService` for advanced patterns.
+**Goal**: The `CartEffectsService` provides additional functionality that complements the main cart service.
 
-**Features to Implement**:
+**Architecture Note**: The CartEffectsService consumes data from CartComputedService and adds wishlist, recently viewed, and history functionality on top.
 
-```typescript
-export class CartEffectsService {
-  private items = signal<CartItem[]>([]);
-  private wishlist = signal<string[]>([]);
-  private recentlyViewed = signal<Product[]>([]);
-  private cartHistory = signal<CartItem[][]>([]);
+**Features Available**:
+- Wishlist management (separate from cart)
+- Recently viewed products tracking
+- Cart history and restore functionality  
+- Advanced analytics effects
 
-  // TODO: Implement wishlist management
-  addToWishlist(productId: string): void
-  removeFromWishlist(productId: string): void
-  isInWishlist(productId: string): boolean
-
-  // TODO: Implement recently viewed tracking
-  addToRecentlyViewed(product: Product): void
-
-  // TODO: Implement cart history
-  getPreviousCartState(): CartItem[] | null
-  restorePreviousCart(): void
-}
-```
+**Usage**: The effects service automatically syncs with the main cart service and provides additional UI features.
 
 ### Task 7: Advanced UI Integration
 
@@ -247,12 +236,16 @@ export class CartEffectsService {
 **Component Integration**:
 ```typescript
 export class CartIntermediateComponent {
-  constructor(
-    public cartService: CartComputedService,
-    public effectsService: CartEffectsService
-  ) {}
+  public cartService = inject(CartComputedService);
+  public effectsService = inject(CartEffectsService);
 
-  // TODO: Implement filter methods
+  // Cart operations use main service
+  onAddToCart(product: Product): void {
+    this.cartService.addItem(product);
+    this.effectsService.addToRecentlyViewed(product);
+  }
+
+  // Filter methods (students implement)
   onCategoryChange(category: string): void {
     this.cartService.setCategory(category);
   }
@@ -261,7 +254,7 @@ export class CartIntermediateComponent {
     this.cartService.setSearchQuery(query);
   }
 
-  // TODO: Implement wishlist operations
+  // Wishlist operations use effects service
   onAddToWishlist(productId: string): void {
     this.effectsService.addToWishlist(productId);
   }

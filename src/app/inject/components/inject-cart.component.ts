@@ -26,17 +26,209 @@ import { CartItem } from '../../shared/models/cart-item.model';
     <div class="inject-cart-container">
       <header class="page-header">
         <h1>Modern inject() Cart</h1>
-        <p>TODO: Full template implementation</p>
+        <p class="subtitle">Demonstrating field-based dependency injection with inject() function</p>
+        <div class="navigation-hint">
+          <p><strong>Learning Focus:</strong> Modern Angular DI patterns, optional injection, configuration tokens</p>
+          <button class="btn btn-secondary" routerLink="/inject-intro" 
+                  title="Return to inject() introduction">← Back to inject() Intro</button>
+        </div>
       </header>
-      
+
+      <!-- Product Grid -->
+      <section class="products-section">
+        <h2>Sample Products</h2>
+        <div class="product-grid">
+          @for (product of sampleProducts(); track product.id) {
+            <div class="product-card">
+              <img [src]="product.image" [alt]="product.name" class="product-image" />
+              <div class="product-info">
+                <h3>{{ product.name }}</h3>
+                <p class="product-category">{{ product.category }}</p>
+                <p class="product-price">\${{ product.price.toFixed(2) }}</p>
+                <p class="product-description">{{ product.description }}</p>
+                <div class="product-actions">
+                  @if (isProductInCart(product.id)) {
+                    <span class="in-cart-indicator">✓ In Cart</span>
+                  } @else {
+                    <button class="btn btn-primary" (click)="addToCart(product)">
+                      Add to Cart
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Cart Display -->
       <section class="cart-section">
-        <h2>Shopping Cart Items: {{ cartService.items().length }}</h2>
+        <div class="cart-header">
+          <h2>Shopping Cart ({{ cartService.items().length }} items)</h2>
+          @if (cartService.items().length > 0) {
+            <button class="btn btn-secondary" (click)="clearCart()">Clear Cart</button>
+          }
+        </div>
+
+        @if (cartService.items().length === 0) {
+          <div class="empty-cart">
+            <p>Your cart is empty</p>
+            <p class="helper-text">Add some products to see inject() service in action!</p>
+          </div>
+        } @else {
+          <div class="cart-items">
+            @for (item of cartService.items(); track item.id) {
+              <div class="cart-item">
+                <img [src]="item.image" [alt]="item.name" class="item-image" />
+                <div class="item-details">
+                  <h4>{{ item.name }}</h4>
+                  <p class="item-category">{{ item.category }}</p>
+                  <p class="item-price">\${{ item.price.toFixed(2) }}</p>
+                </div>
+                <div class="quantity-controls">
+                  <button class="btn btn-sm" (click)="decreaseQuantity(item.id)" 
+                          [disabled]="item.quantity <= 1">-</button>
+                  <span class="quantity">{{ item.quantity }}</span>
+                  <button class="btn btn-sm" (click)="increaseQuantity(item.id)">+</button>
+                </div>
+                <div class="item-total">
+                  \${{ (item.price * item.quantity).toFixed(2) }}
+                </div>
+                <button class="btn btn-danger btn-sm" (click)="removeItem(item.id)">Remove</button>
+              </div>
+            }
+          </div>
+
+          <!-- Cart Summary -->
+          <div class="cart-summary">
+            <div class="summary-row">
+              <span>Total Items:</span>
+              <span>{{ cartService.summary().totalItems }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span>\${{ cartService.summary().totalPrice.toFixed(2) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Discount:</span>
+              <span>-\${{ cartService.summary().totalDiscount.toFixed(2) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Tax:</span>
+              <span>\${{ cartService.summary().tax.toFixed(2) }}</span>
+            </div>
+            <div class="summary-row total-row">
+              <span><strong>Total:</strong></span>
+              <span><strong>\${{ cartService.summary().finalPrice.toFixed(2) }}</strong></span>
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- Injection Statistics -->
+      <section class="injection-stats-section">
+        <h2>inject() Function Statistics</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Service Dependencies</h3>
+            @for (dep of Object.entries(serviceDependencies()); track dep[0]) {
+              <div class="dependency-item">
+                <code>{{ dep[0] }}</code>: {{ dep[1] }}
+              </div>
+            }
+          </div>
+          
+          <div class="stat-card">
+            <h3>Injection Metrics</h3>
+            <div class="metric-item">
+              <span>Total Services:</span>
+              <span>{{ injectionStats().totalServices }}</span>
+            </div>
+            <div class="metric-item">
+              <span>Optional Services:</span>
+              <span>{{ injectionStats().optionalServices }}</span>
+            </div>
+            <div class="metric-item">
+              <span>Config Tokens:</span>
+              <span>{{ injectionStats().configTokens }}</span>
+            </div>
+            <div class="metric-item">
+              <span>Injection Time:</span>
+              <span>{{ injectionStats().injectionTime }}ms</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <h3>Context Information</h3>
+            <div class="context-item">
+              <span>Component:</span>
+              <span>{{ injectionContext().componentName }}</span>
+            </div>
+            <div class="context-item">
+              <span>Method:</span>
+              <span>{{ injectionContext().injectionMethod }}</span>
+            </div>
+            <div class="context-item">
+              <span>Type:</span>
+              <span>{{ injectionContext().contextType }}</span>
+            </div>
+            <div class="context-item">
+              <span>Renders:</span>
+              <span>{{ renderCount() }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Educational Panel -->
+      <section class="educational-panel">
+        <h2>inject() Function Benefits</h2>
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <h3>🎯 Field-Based Injection</h3>
+            <p>No constructor boilerplate - inject services directly as class fields</p>
+            <code>cartService = inject(InjectCartService);</code>
+          </div>
+          
+          <div class="benefit-card">
+            <h3>🔧 Optional Dependencies</h3>
+            <p>Gracefully handle missing services with optional injection</p>
+            <code>analytics = inject(AnalyticsService, &#123; optional: true &#125;);</code>
+          </div>
+          
+          <div class="benefit-card">
+            <h3>⚙️ Configuration Injection</h3>
+            <p>Inject configuration tokens with fallback values</p>
+            <code>config = inject(CONFIG_TOKEN) ?? defaults;</code>
+          </div>
+          
+          <div class="benefit-card">
+            <h3>🚀 Better Tree-Shaking</h3>
+            <p>Improved build optimization and smaller bundle sizes</p>
+            <code>Functional composition support</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Buttons -->
+      <section class="actions-section">
+        <button class="btn btn-primary" (click)="measureInjectionPerformance()">
+          Measure inject() Performance
+        </button>
+        @if (cartService.items().length > 0) {
+          <button class="btn btn-secondary" (click)="exportCart()">
+            Export Cart Data
+          </button>
+        }
       </section>
     </div>
   `,
   styleUrls: ['./inject-cart.component.css']
 })
 export class InjectCartComponent {
+  // Object utility for template usage
+  Object = Object;
+  
   // Modern inject() pattern - field-based injection
   cartService = inject(InjectCartService);
   private productService = inject(ProductService);

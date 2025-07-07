@@ -63,12 +63,8 @@ export class ShoppingCartRxjsService {
   private itemsSubject = new BehaviorSubject<CartItem[]>([]);
   items$ = this.itemsSubject.asObservable();
   
-  private totalSubject = new BehaviorSubject<number>(0);
-  total$ = this.totalSubject.asObservable();
-  
   constructor() {
     // TODO: Load items from localStorage if available
-    // TODO: Auto-update total when items change
   }
   
   // TODO: Implement methods
@@ -86,26 +82,20 @@ export class ShoppingCartRxjsService {
 
 ### Task 1: Initialize the Service
 
-**Goal**: Set up the service constructor with localStorage loading and automatic total calculation.
+**Goal**: Set up the service constructor with localStorage loading.
 
 **Requirements**:
 ```typescript
 constructor() {
   // Load cart from localStorage on initialization
   this.loadCartFromStorage();
-  
-  // Subscribe to items changes and update total automatically
-  this.items$.subscribe(items => {
-    const total = this.calculateTotal(items);
-    this.totalSubject.next(total);
-  });
 }
 ```
 
 **Key Concepts**:
 - Service initialization
-- Reactive streams setup
-- Automatic derived state calculation
+- LocalStorage persistence setup
+- Preparation for reactive patterns
 
 ### Task 2: Implement `addItem` Method
 
