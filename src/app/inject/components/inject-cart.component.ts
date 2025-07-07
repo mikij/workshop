@@ -9,11 +9,11 @@ import { ProductService } from '../../shared/services/product.service';
 import { Product } from '../../shared/models/product.model';
 import { CartItem } from '../../shared/models/cart-item.model';
 
-// TODO: These will be created as part of the inject() workshop exercises
-// They demonstrate optional service injection patterns:
-// import { CART_CONFIG, CartConfig } from '../config/cart-config';
-// import { Logger } from '../services/logger.service';
-// import { AnalyticsService } from '../services/analytics.service';
+// TODO: Uncomment these imports as you implement inject() patterns in Task 1:
+// import { CART_CONFIG, FEATURE_FLAGS, DEFAULT_CART_CONFIG } from '../config/cart-config';
+// import { injectOptionalService, injectWithFallback, createCartAnalytics } from '../utils/injection-utils';
+// import { provideInjectCart, provideCartAnalytics } from '../providers/cart-providers';
+// import { PLATFORM_ID, isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'inject-cart',
@@ -30,7 +30,7 @@ import { CartItem } from '../../shared/models/cart-item.model';
         <p class="subtitle">Demonstrating field-based dependency injection with inject() function</p>
         <div class="navigation-hint">
           <p><strong>Learning Focus:</strong> Modern Angular DI patterns, optional injection, configuration tokens</p>
-          <button class="btn btn-secondary" routerLink="/inject-intro" 
+          <button class="btn btn-secondary" routerLink="/inject-intro"
                   title="Return to inject() introduction">← Back to inject() Intro</button>
         </div>
       </header>
@@ -87,7 +87,7 @@ import { CartItem } from '../../shared/models/cart-item.model';
                   <p class="item-price">\${{ item.price.toFixed(2) }}</p>
                 </div>
                 <div class="quantity-controls">
-                  <button class="btn btn-sm" (click)="decreaseQuantity(item.id)" 
+                  <button class="btn btn-sm" (click)="decreaseQuantity(item.id)"
                           [disabled]="item.quantity <= 1">-</button>
                   <span class="quantity">{{ item.quantity }}</span>
                   <button class="btn btn-sm" (click)="increaseQuantity(item.id)">+</button>
@@ -138,7 +138,7 @@ import { CartItem } from '../../shared/models/cart-item.model';
               </div>
             }
           </div>
-          
+
           <div class="stat-card">
             <h3>Injection Metrics</h3>
             <div class="metric-item">
@@ -190,19 +190,19 @@ import { CartItem } from '../../shared/models/cart-item.model';
             <p>No constructor boilerplate - inject services directly as class fields</p>
             <code>cartService = inject(InjectCartService);</code>
           </div>
-          
+
           <div class="benefit-card">
             <h3>🔧 Optional Dependencies</h3>
             <p>Gracefully handle missing services with optional injection</p>
             <code>analytics = inject(AnalyticsService, &#123; optional: true &#125;);</code>
           </div>
-          
+
           <div class="benefit-card">
             <h3>⚙️ Configuration Injection</h3>
             <p>Inject configuration tokens with fallback values</p>
             <code>config = inject(CONFIG_TOKEN) ?? defaults;</code>
           </div>
-          
+
           <div class="benefit-card">
             <h3>🚀 Better Tree-Shaking</h3>
             <p>Improved build optimization and smaller bundle sizes</p>
@@ -229,32 +229,7 @@ import { CartItem } from '../../shared/models/cart-item.model';
 export class InjectCartComponent {
   // Object utility for template usage
   Object = Object;
-  
-  // Modern inject() pattern - field-based injection
-  cartService = inject(InjectCartService);
-  private productService = inject(ProductService);
-  private router = inject(Router);
-  private http = inject(HttpClient);
-  
-  // TODO: Convert constructor injection to inject() field injection
-  // This demonstrates modern Angular dependency injection patterns:
-  // 
-  // FIELD-BASED INJECTION:
-  // cartService = inject(InjectCartService);
-  // productService = inject(ProductService);
-  // 
-  // OPTIONAL SERVICE INJECTION:
-  // private analytics = inject(AnalyticsService, { optional: true }) ?? this.createNoOpAnalytics();
-  // private logger = inject(Logger, { optional: true });
-  // 
-  // CONFIGURATION TOKEN INJECTION:
-  // private config = inject(CART_CONFIG, { optional: true }) ?? this.getDefaultConfig();
-  // 
-  // PLATFORM-SPECIFIC SERVICE INJECTION:
-  // private storage = inject(PLATFORM_ID) === 'browser' 
-  //   ? inject(BrowserStorageService) 
-  //   : inject(ServerStorageService);
-  
+
   // Component state
   sampleProducts = signal<Product[]>([]);
   renderCount = signal(0);
@@ -270,7 +245,7 @@ export class InjectCartComponent {
 
   serviceDependencies = computed(() => ({
     cartService: 'InjectCartService',
-    productService: 'ProductService', 
+    productService: 'ProductService',
     router: 'Router',
     http: 'HttpClient'
     // TODO: Add optional service dependencies when implemented:
@@ -286,7 +261,31 @@ export class InjectCartComponent {
     timestamp: new Date().toISOString()
   }));
 
-  constructor() {
+  // TODO: Convert from constructor injection to inject() pattern
+  // This component demonstrates modern Angular dependency injection with inject() function
+  //
+  // TASK 1: Replace constructor injection with field-based inject() patterns:
+  //
+  // STEP 1: Convert basic services to inject() fields
+
+  //
+  // STEP 2: Add optional service injection
+
+  //
+  // STEP 3: Add configuration token injection with fallbacks
+  // private config = inject(CART_CONFIG, { optional: true }) ?? DEFAULT_CART_CONFIG;
+  //
+  // STEP 4: Add platform-specific service injection
+  // private storage = inject(PLATFORM_ID) === 'browser'
+  //   ? inject(BrowserStorageService)
+  //   : inject(ServerStorageService);
+
+  constructor(
+    public cartService: InjectCartService,
+    private productService: ProductService,
+    private router: Router,
+    private http: HttpClient
+  ) {
     this.loadSampleProducts();
     this.updateRenderMetrics();
   }
@@ -304,7 +303,7 @@ export class InjectCartComponent {
       image: product.image,
       discount: 0
     };
-    
+
     // Add to cart using inject() service
     try {
       this.cartService.addItem(product);
@@ -365,7 +364,7 @@ export class InjectCartComponent {
   exportCart() {
     try {
       const cartData = this.cartService.exportCart();
-      
+
       // Create download
       const blob = new Blob([cartData], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
@@ -386,18 +385,18 @@ export class InjectCartComponent {
 
   measureInjectionPerformance() {
     const start = performance.now();
-    
+
     // Simulate injection operations
     this.cartService.summary();
     this.serviceDependencies();
     this.injectionContext();
-    
+
     const end = performance.now();
     console.log(`inject() operations took ${end - start} milliseconds`);
-    
+
     // TODO: Log performance data with injected logger service
     // this.logger?.log('Performance measurement', { duration: end - start });
-    
+
     this.updateRenderMetrics();
   }
 
@@ -432,7 +431,7 @@ export class InjectCartComponent {
             tags: ['angular', 'inject']
           },
           {
-            id: 'inject-2', 
+            id: 'inject-2',
             name: 'DI Masterclass',
             price: 99.99,
             category: 'courses',
@@ -476,7 +475,7 @@ export class InjectCartComponent {
       exportDate: new Date().toISOString(),
       note: 'Fallback export - service method not implemented'
     };
-    
+
     const blob = new Blob([JSON.stringify(fallbackData, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -490,33 +489,33 @@ export class InjectCartComponent {
     return `inject-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  // TODO: Create provider functions for inject() patterns
-  // This demonstrates how to create reusable provider functions with inject():
-  // 
-  // export function provideInjectCart(config?: Partial<CartConfig>) {
-  //   return [
-  //     InjectCartService,
-  //     ProductService,
-  //     { provide: CART_CONFIG, useValue: { ...defaultConfig, ...config } },
-  //     { provide: Logger, useClass: ConsoleLogger },
-  //     { provide: AnalyticsService, useFactory: () => new AnalyticsService() }
-  //   ];
-  // }
-  
-  // TODO: Implement conditional service injection based on platform
-  // This shows how to inject different services based on platform:
-  // 
-  // private storage = inject(PLATFORM_ID) === 'browser' 
-  //   ? inject(BrowserStorageService) 
+  // TODO: After converting to inject(), implement these advanced patterns:
+  //
+  // ADVANCED PATTERN 1: Optional services with fallbacks
+  // private analytics = inject(AnalyticsService, { optional: true }) ?? this.createNoOpAnalytics();
+  // private logger = inject(Logger, { optional: true }) ?? console;
+  //
+  // ADVANCED PATTERN 2: Configuration injection with environment-specific defaults
+  // private config = inject(CART_CONFIG, { optional: true }) ?? this.getEnvironmentConfig();
+  //
+  // ADVANCED PATTERN 3: Platform-specific service injection
+  // private storage = isPlatformBrowser(inject(PLATFORM_ID))
+  //   ? inject(BrowserStorageService)
   //   : inject(ServerStorageService);
-  
-  // TODO: Create configuration token injection with fallbacks
-  // This demonstrates configuration injection patterns:
-  // 
-  // private config = inject(CART_CONFIG, { optional: true }) ?? {
-  //   maxItems: 100,
-  //   taxRate: 0.08,
-  //   currency: 'USD',
-  //   enableAnalytics: true
-  // };
+  //
+  // ADVANCED PATTERN 4: Conditional injection based on feature flags
+  // private advancedFeatures = inject(FEATURE_FLAGS)?.advancedCart
+  //   ? inject(AdvancedCartService, { optional: true })
+  //   : null;
+  //
+  // ADVANCED PATTERN 5: Factory function injection
+  // private cartFactory = inject(() => createCartService({ enableAnalytics: true }));
+  //
+  // After implementing inject() patterns, update these computed values:
+  // injectionStats = computed(() => ({
+  //   totalServices: 8, // Include new injected services
+  //   optionalServices: 3, // analytics, logger, advancedFeatures
+  //   configTokens: 2, // CART_CONFIG, FEATURE_FLAGS
+  //   injectionTime: Math.round(performance.now() - this.injectionStartTime)
+  // }));
 }

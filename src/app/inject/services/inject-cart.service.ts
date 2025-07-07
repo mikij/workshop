@@ -3,10 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Product } from '../../shared/models/product.model';
 import { CartItem } from '../../shared/models/cart-item.model';
 
-// TODO: These will be created as part of the workshop exercises
-// import { CART_CONFIG, CartConfig } from '../config/cart-config';
-// import { Logger } from './logger.service';
-// import { AnalyticsService } from './analytics.service';
+// TODO: Uncomment these imports as you implement inject() patterns in Task 3:
+// import { CART_CONFIG, FEATURE_FLAGS, DEFAULT_CART_CONFIG, CartConfig } from '../config/cart-config';
+// import { injectOptionalService, injectWithFallback } from '../utils/injection-utils';
+// import { PLATFORM_ID, isPlatformBrowser } from '@angular/common';
 
 export interface CartSummary {
   totalItems: number;
@@ -68,31 +68,34 @@ export class InjectCartService {
   // private analytics = inject(AnalyticsService, { optional: true });
   // private config = inject(CART_CONFIG, { optional: true }) ?? this.getDefaultConfig();
   
-  // TODO: Inject HttpClient using inject() function
-  // HINT: private http = inject(HttpClient);
-  // LEARNING: This replaces constructor(private http: HttpClient) {}
-  private http = inject(HttpClient);
-  
-  // TODO: Implement optional service injection
-  // HINT: Use { optional: true } parameter
-  // SYNTAX: private analytics = inject(AnalyticsService, { optional: true });
-  // LEARNING: Optional injection prevents errors if service is not provided
+  // TODO: TASK 3 - Convert constructor injection to modern inject() patterns
+  //
+  // STEP 1: Replace constructor dependencies with inject() field injection
+  // private http = inject(HttpClient);
+  //
+  // STEP 2: Add optional service injection with error handling
   // private analytics = inject(AnalyticsService, { optional: true });
   // private logger = inject(Logger, { optional: true });
-  
-  // TODO: Implement configuration injection with fallback
-  // HINT: Use nullish coalescing (??) for default values
-  // SYNTAX: private config = inject(CONFIG_TOKEN, { optional: true }) ?? defaultConfig;
-  // LEARNING: Configuration injection allows customizable service behavior
-  // private config = inject(CART_CONFIG, { optional: true }) ?? this.getDefaultConfig();
-  
-  // TODO: Implement platform-specific injection
-  // HINT: Use inject(PLATFORM_ID) to detect browser vs server
-  // SYNTAX: inject(PLATFORM_ID) === 'browser' ? BrowserService : ServerService
-  // LEARNING: Platform-specific injection enables SSR compatibility
-  // private storage = inject(PLATFORM_ID) === 'browser' 
-  //   ? inject(BrowserStorageService)
-  //   : inject(ServerStorageService);
+  //
+  // STEP 3: Add configuration injection with fallback values
+  // private config = inject(CART_CONFIG, { optional: true }) ?? DEFAULT_CART_CONFIG;
+  //
+  // STEP 4: Add platform-specific service injection for SSR compatibility
+  // private storage = isPlatformBrowser(inject(PLATFORM_ID))
+  //   ? inject(BrowserStorageService, { optional: true })
+  //   : inject(ServerStorageService, { optional: true });
+  //
+  // STEP 5: Add feature flag based conditional injection
+  // private advancedFeatures = inject(FEATURE_FLAGS)?.advancedCart
+  //   ? inject(AdvancedCartService, { optional: true })
+  //   : null;
+  //
+  // LEARNING OBJECTIVES:
+  // - Field-based injection eliminates constructor boilerplate
+  // - Optional injection gracefully handles missing services
+  // - Configuration injection enables customizable behavior
+  // - Platform-specific injection enables SSR compatibility
+  // - Conditional injection supports feature flag patterns
   
   private cartItems = signal<CartItem[]>([]);
   
@@ -116,7 +119,8 @@ export class InjectCartService {
       return sum + (item.price * item.quantity * discount);
     }, 0);
     
-    // TODO: Use injected config for tax rate instead of hardcoded 0.08
+    // TODO: After implementing inject() patterns, use injected config:
+    // const taxRate = this.config?.taxRate ?? 0.08;
     const taxRate = 0.08; // 8% default tax rate
     const subtotal = totalPrice - totalDiscount;
     const tax = subtotal * taxRate;
@@ -179,7 +183,8 @@ export class InjectCartService {
       errors.push('Some items have invalid prices');
     }
     
-    // TODO: Check item count limit using injected config
+    // TODO: After implementing inject() patterns, use injected config:
+    // const maxItems = this.config?.maxItems ?? 100;
     const maxItems = 100; // Default limit
     if (items.length > maxItems) {
       errors.push(`Cart exceeds maximum item limit of ${maxItems}`);
@@ -195,7 +200,7 @@ export class InjectCartService {
     };
   });
 
-  constructor() {
+  constructor(private http: HttpClient) {
     this.loadCartFromStorage();
     this.setupEffects();
     this.logInjectionInfo();
@@ -230,7 +235,8 @@ export class InjectCartService {
     
     this.updateMetadata();
     
-    // TODO: Log analytics with injected analytics service
+    // TODO: After implementing inject() patterns, use injected analytics service:
+    // this.analytics?.trackEvent('item_added', { productId: product.id, name: product.name });
     console.log(`Added item: ${product.name}`);
   }
 
@@ -238,7 +244,8 @@ export class InjectCartService {
     this.cartItems.update(items => items.filter(item => item.id !== itemId));
     this.updateMetadata();
     
-    // TODO: Log analytics with injected analytics service
+    // TODO: After implementing inject() patterns, use injected analytics service:
+    // this.analytics?.trackEvent('item_removed', { itemId });
     console.log(`Removed item with ID: ${itemId}`);
   }
 
@@ -258,7 +265,8 @@ export class InjectCartService {
     
     this.updateMetadata();
     
-    // TODO: Log analytics with injected analytics service
+    // TODO: After implementing inject() patterns, use injected analytics service:
+    // this.analytics?.trackEvent('quantity_updated', { itemId, quantity });
     console.log(`Updated quantity for item ${itemId} to ${quantity}`);
   }
 
@@ -267,7 +275,8 @@ export class InjectCartService {
     this.cartItems.set([]);
     this.updateMetadata();
     
-    // TODO: Log analytics with injected analytics service
+    // TODO: After implementing inject() patterns, use injected analytics service:
+    // this.analytics?.trackEvent('cart_cleared', { itemCount });
     console.log(`Cleared cart with ${itemCount} items`);
   }
 
@@ -403,10 +412,12 @@ export class InjectCartService {
       dependencies: {
         required: ['HttpClient'],
         optional: [
-          // TODO: List optional dependencies when implemented
+          // TODO: After implementing inject() patterns, list:
+          // 'AnalyticsService', 'Logger', 'ConfigValidator'
         ],
         conditional: [
-          // TODO: List platform-specific dependencies when implemented
+          // TODO: After implementing inject() patterns, list:
+          // 'BrowserStorageService', 'ServerStorageService', 'AdvancedCartService'
         ]
       },
       features: [

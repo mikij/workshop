@@ -16,9 +16,4 @@ export const INJECT_ROUTES: Routes = [
     loadComponent: () => import('./components/provider-functions.component').then(m => m.ProviderFunctionsComponent),
     title: 'Provider Functions'
   },
-  {
-    path: 'testing',
-    loadComponent: () => import('./components/testing-patterns.component').then(m => m.TestingPatternsComponent),
-    title: 'Testing with inject()'
-  }
 ];
