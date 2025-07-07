@@ -443,9 +443,19 @@ export class AdvancedCartService {
       if (savedState) {
         try {
           const state = JSON.parse(savedState) as CartState;
+          
+          // TODO: CRITICAL BUG FIX NEEDED - Date Object Parsing Issue
+          // PROBLEM: JSON.parse() converts Date objects to strings, but CartState.lastUpdated expects Date
+          // SYMPTOM: Runtime error "cartState.lastUpdated.toISOString is not a function"
+          // SOLUTION: Convert lastUpdated string back to Date object after JSON.parse()
+          // HINT: const restoredState: CartState = { ...state, lastUpdated: new Date(state.lastUpdated) };
+          // LEARNING: Always handle Date objects carefully in localStorage serialization
+          
           this.cartState.set(state);
         } catch (error) {
           console.error('Error loading cart from storage:', error);
+          // TODO: Add fallback to default state when parsing fails
+          // HINT: this.cartState.set({ items: [], lastUpdated: new Date(), version: 1 });
         }
       }
     }

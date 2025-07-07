@@ -230,10 +230,10 @@ import { CartItem } from '../../shared/models/cart-item.model';
           </div>
           
           <div class="tool">
-            <h4>Performance</h4>
+            <h4>Standalone Benefits</h4>
             <p>Component renders: {{ renderCount() }}</p>
-            <p>Last render: {{ lastRenderTime() }}ms</p>
-            <button (click)="measurePerformance()">Measure Performance</button>
+            <p>Module-free architecture</p>
+            <p>Direct service injection</p>
           </div>
         </div>
       </section>
@@ -255,7 +255,6 @@ export class StandaloneCartComponent {
   // Component state
   sampleProducts = signal<Product[]>([]);
   renderCount = signal(0);
-  lastRenderTime = signal(0);
 
   // Computed values
   isEmpty = computed(() => this.cartService.items().length === 0);
@@ -297,17 +296,6 @@ export class StandaloneCartComponent {
     return this.cartService.items().some(item => item.productId === productId);
   }
 
-  measurePerformance() {
-    const start = performance.now();
-    
-    // Simulate some operations
-    this.cartService.summary();
-    this.cartService.items();
-    
-    const end = performance.now();
-    this.lastRenderTime.set(Math.round(end - start));
-    this.updateRenderMetrics();
-  }
 
   // Track by functions (will be simplified with @for)
   trackByItemId(index: number, item: CartItem): string {
