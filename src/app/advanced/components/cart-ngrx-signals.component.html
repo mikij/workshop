@@ -1,0 +1,699 @@
+<div class="cart-container">
+  <!-- Header Tabs -->
+  <div class="tabs">
+    <button 
+      [class.active]="activeTab === 'products'" 
+      (click)="activeTab = 'products'"
+      class="tab-button">
+      Products
+    </button>
+    <button 
+      [class.active]="activeTab === 'cart'" 
+      (click)="activeTab = 'cart'"
+      class="tab-button">
+      Cart ({{ cartStore.totalItems() }})
+    </button>
+    <button 
+      [class.active]="activeTab === 'analytics'" 
+      (click)="activeTab = 'analytics'"
+      class="tab-button">
+      Analytics
+    </button>
+    <button 
+      [class.active]="activeTab === 'comparison'" 
+      (click)="activeTab = 'comparison'"
+      class="tab-button">
+      State Comparison
+    </button>
+    <button 
+      [class.active]="activeTab === 'features'" 
+      (click)="activeTab = 'features'"
+      class="tab-button">
+      Store Features
+    </button>
+  </div>
+
+  <!-- Products Tab -->
+  @if (activeTab === 'products') {
+    <div class="products-section">
+      <h2>🛍️ Shopping with &#64;ngrx/signals</h2>
+      
+      <!-- Filters -->
+      <div class="filters">
+        <div class="filter-group">
+          <label>Category:</label>
+          <select 
+            [value]="cartStore.selectedCategory()" 
+            (change)="onCategoryChange($any($event.target).value)"
+            class="filter-select">
+            @for (category of categories; track category) {
+              <option [value]="category">
+                {{ category === 'all' ? 'All Categories' : category }}
+              </option>
+            }
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>Search:</label>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Search products..."
+            class="filter-input">
+        </div>
+      </div>
+      
+      <!-- Products Grid -->
+      @if (cartStore.isLoading()) {
+        <div class="loading-message">Loading products...</div>
+      } @else if (cartStore.filteredProducts().length > 0) {
+        <div class="products-grid">
+          @for (product of cartStore.filteredProducts(); track product.id) {
+            <div class="product-card-wrapper">
+              <app-product-card 
+                [product]="product"
+                [isInWishlist]="cartStore.isInWishlist()(product.id)"
+                (addToCart)="onAddToCart($event)"
+                (addToWishlist)="onToggleWishlist(product)">
+              </app-product-card>
+              
+              <!-- Cart Status -->
+              @if (isInCart(product.id)) {
+                <div class="cart-status">
+                  In Cart: {{ getCartQuantity(product.id) }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="no-products-message">
+          @if (cartStore.searchQuery()) {
+            No products found for "{{ cartStore.searchQuery() }}"
+          } @else {
+            No products available
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Cart Tab -->
+  @if (activeTab === 'cart') {
+    <div class="cart-section">
+      <div class="cart-header">
+        <h2>🛒 Shopping Cart (&#64;ngrx/signals)</h2>
+        <div class="cart-actions">
+          <button 
+            (click)="onToggleSortOrder()" 
+            class="sort-button">
+            Sort by Value {{ cartStore.sortOrder() === 'asc' ? '↑' : '↓' }}
+          </button>
+          <button 
+            (click)="onRestorePreviousCart()" 
+            [disabled]="cartStore.cartHistory().length === 0"
+            class="restore-button">
+            ↩️ Restore Previous
+          </button>
+          <button 
+            (click)="onClearCart()" 
+            [disabled]="cartStore.cartItems().length === 0"
+            class="clear-button">
+            Clear Cart
+          </button>
+        </div>
+      </div>
+
+      @if (cartStore.filteredItems().length > 0) {
+        <div class="cart-items">
+          @for (item of cartStore.filteredItems(); track item.id) {
+            <div class="cart-item">
+              <img [src]="item.image" [alt]="item.name" class="item-image">
+              <div class="item-details">
+                <h3>{{ item.name }}</h3>
+                <p class="item-category">{{ item.category }}</p>
+                @if (item.discount) {
+                  <p class="item-discount">{{ item.discount }}% OFF</p>
+                }
+              </div>
+              <div class="item-price">
+                {{ item.price | currency }}
+              </div>
+              <div class="item-quantity">
+                <button (click)="onUpdateQuantity(item.id, -1)" class="qty-button">-</button>
+                <span class="qty-value">{{ item.quantity }}</span>
+                <button (click)="onUpdateQuantity(item.id, 1)" class="qty-button">+</button>
+              </div>
+              <div class="item-total">
+                {{ item.price * item.quantity | currency }}
+              </div>
+              <button (click)="onRemoveFromCart(item.id)" class="remove-button">🗑️</button>
+            </div>
+          }
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span>{{ cartStore.cartSummary().totalPrice | currency }}</span>
+          </div>
+          @if (cartStore.cartSummary().totalDiscount > 0) {
+            <div class="summary-row discount">
+              <span>Discount:</span>
+              <span>-{{ cartStore.cartSummary().totalDiscount | currency }}</span>
+            </div>
+          }
+          <div class="summary-row">
+            <span>Tax:</span>
+            <span>{{ cartStore.cartSummary().tax | currency }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Shipping:</span>
+            <span>
+              @if (cartStore.cartSummary().shippingCost === 0) {
+                FREE ✓
+              } @else {
+                {{ cartStore.cartSummary().shippingCost | currency }}
+              }
+            </span>
+          </div>
+          <div class="summary-row total">
+            <span>Total:</span>
+            <span>{{ cartStore.cartSummary().finalPrice | currency }}</span>
+          </div>
+          <div class="delivery-info">
+            📦 Estimated delivery: {{ cartStore.cartSummary().estimatedDelivery }}
+          </div>
+        </div>
+      } @else {
+        <div class="empty-cart">
+          <p>Your cart is empty</p>
+          <button (click)="activeTab = 'products'" class="shop-button">
+            Start Shopping
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Analytics Tab -->
+  @if (activeTab === 'analytics') {
+    <div class="analytics-section">
+      <h2>📊 Cart Analytics</h2>
+      
+      <!-- Category Statistics -->
+      <div class="stats-card">
+        <h3>Category Breakdown</h3>
+        @if (cartStore.categoryStats().length > 0) {
+          <div class="category-stats">
+            @for (stat of cartStore.categoryStats(); track stat.category) {
+              <div class="stat-row">
+                <span class="stat-category">{{ stat.category }}</span>
+                <div class="stat-details">
+                  <span>{{ stat.itemCount }} items</span>
+                  <span>{{ stat.totalValue | currency }}</span>
+                  <span>Avg: {{ stat.averagePrice | currency }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="no-data">No items in cart</p>
+        }
+      </div>
+
+      <!-- Discount Information -->
+      <div class="stats-card">
+        <h3>Discount Summary</h3>
+        @if (cartStore.discountInfo().hasDiscounts) {
+          <div class="discount-stats">
+            <div class="stat-item">
+              <span class="stat-label">Discounted Items:</span>
+              <span class="stat-value">{{ cartStore.discountInfo().discountedItemsCount }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Savings:</span>
+              <span class="stat-value">{{ cartStore.discountInfo().totalSavings | currency }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Average Discount:</span>
+              <span class="stat-value">{{ cartStore.discountInfo().averageDiscount | currency }}</span>
+            </div>
+            @if (cartStore.discountInfo().bulkDiscountApplied) {
+              <div class="bulk-discount-notice">
+                🎉 Bulk discount applied!
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="no-data">No discounts applied</p>
+        }
+      </div>
+
+      <!-- Wishlist -->
+      <div class="stats-card">
+        <h3>❤️ Wishlist ({{ cartStore.wishlist().length }})</h3>
+        @if (cartStore.wishlist().length > 0) {
+          <div class="wishlist-items">
+            @for (productId of cartStore.wishlist(); track productId) {
+              <span class="wishlist-item">{{ productId }}</span>
+            }
+          </div>
+        } @else {
+          <p class="no-data">No items in wishlist</p>
+        }
+      </div>
+
+      <!-- Recently Viewed -->
+      <div class="stats-card">
+        <h3>👁️ Recently Viewed</h3>
+        @if (cartStore.recentlyViewed().length > 0) {
+          <div class="recent-items">
+            @for (product of cartStore.recentlyViewed(); track product.id) {
+              <div class="recent-item">
+                <img [src]="product.image" [alt]="product.name">
+                <span>{{ product.name }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="no-data">No recently viewed items</p>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- State Comparison Tab -->
+  @if (activeTab === 'comparison') {
+    <div class="comparison-section">
+      <h2>🔄 State Management Comparison</h2>
+      
+      <div class="comparison-grid">
+        <!-- @ngrx/store -->
+        <div class="comparison-card">
+          <h3>{{ getNgrxStoreComparison().name }}</h3>
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✅ Pros</h4>
+              <ul>
+                @for (pro of getNgrxStoreComparison().pros; track pro) {
+                  <li>{{ pro }}</li>
+                }
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>❌ Cons</h4>
+              <ul>
+                @for (con of getNgrxStoreComparison().cons; track con) {
+                  <li>{{ con }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+          <p class="best-for"><strong>Best for:</strong> {{ getNgrxStoreComparison().bestFor }}</p>
+          <details class="code-example">
+            <summary>Code Example</summary>
+            <pre><code>{{ getNgrxStoreComparison().example }}</code></pre>
+          </details>
+        </div>
+
+        <!-- @ngrx/signals -->
+        <div class="comparison-card highlighted">
+          <h3>{{ getNgrxSignalsComparison().name }} ⭐</h3>
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✅ Pros</h4>
+              <ul>
+                @for (pro of getNgrxSignalsComparison().pros; track pro) {
+                  <li>{{ pro }}</li>
+                }
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>❌ Cons</h4>
+              <ul>
+                @for (con of getNgrxSignalsComparison().cons; track con) {
+                  <li>{{ con }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+          <p class="best-for"><strong>Best for:</strong> {{ getNgrxSignalsComparison().bestFor }}</p>
+          <details class="code-example">
+            <summary>Code Example</summary>
+            <pre><code>{{ getNgrxSignalsComparison().example }}</code></pre>
+          </details>
+        </div>
+
+        <!-- Angular Signals -->
+        <div class="comparison-card">
+          <h3>{{ getAngularSignalsComparison().name }}</h3>
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✅ Pros</h4>
+              <ul>
+                @for (pro of getAngularSignalsComparison().pros; track pro) {
+                  <li>{{ pro }}</li>
+                }
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>❌ Cons</h4>
+              <ul>
+                @for (con of getAngularSignalsComparison().cons; track con) {
+                  <li>{{ con }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+          <p class="best-for"><strong>Best for:</strong> {{ getAngularSignalsComparison().bestFor }}</p>
+          <details class="code-example">
+            <summary>Code Example</summary>
+            <pre><code>{{ getAngularSignalsComparison().example }}</code></pre>
+          </details>
+        </div>
+
+        <!-- Resource API -->
+        <div class="comparison-card">
+          <h3>{{ getResourceApiComparison().name }}</h3>
+          <div class="pros-cons">
+            <div class="pros">
+              <h4>✅ Pros</h4>
+              <ul>
+                @for (pro of getResourceApiComparison().pros; track pro) {
+                  <li>{{ pro }}</li>
+                }
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>❌ Cons</h4>
+              <ul>
+                @for (con of getResourceApiComparison().cons; track con) {
+                  <li>{{ con }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+          <p class="best-for"><strong>Best for:</strong> {{ getResourceApiComparison().bestFor }}</p>
+          <details class="code-example">
+            <summary>Code Example</summary>
+            <pre><code>{{ getResourceApiComparison().example }}</code></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Store Features Tab -->
+  @if (activeTab === 'features') {
+    <div class="features-section">
+      <h2>🧩 Custom Store Features</h2>
+      <p class="features-intro">
+        This implementation showcases the power of &#64;ngrx/signals custom store features.
+        Each feature is reusable, composable, and independently testable.
+      </p>
+      
+      <div class="features-grid">
+        <!-- Tax Calculator Feature -->
+        <div class="feature-card">
+          <h3>🧮 Tax Calculator Feature</h3>
+          <div class="feature-description">
+            <p>Progressive tax calculation with luxury tax support</p>
+            <div class="feature-capabilities">
+              <h4>Capabilities:</h4>
+              <ul>
+                <li>Progressive tax rates (8%, 10%, 12%)</li>
+                <li>Luxury tax for items over $1000</li>
+                <li>Category-based exemptions</li>
+                <li>Real-time tax breakdown</li>
+              </ul>
+            </div>
+            <div class="code-snippet">
+              <h4>Usage:</h4>
+              <pre><code>withTaxCalculator()</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discounts Feature -->
+        <div class="feature-card">
+          <h3>💰 Discounts Feature</h3>
+          <div class="feature-description">
+            <p>Comprehensive discount and promotion management</p>
+            <div class="feature-capabilities">
+              <h4>Capabilities:</h4>
+              <ul>
+                <li>Bulk discounts (quantity-based)</li>
+                <li>Category-specific discounts</li>
+                <li>Coupon code support</li>
+                <li>Stackable/non-stackable discounts</li>
+                <li>Auto-apply best discounts</li>
+              </ul>
+            </div>
+            <div class="code-snippet">
+              <h4>Usage:</h4>
+              <pre><code>withDiscounts()</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Persistence Feature -->
+        <div class="feature-card">
+          <h3>💾 Persistence Feature</h3>
+          <div class="feature-description">
+            <p>Automatic state persistence with versioning</p>
+            <div class="feature-capabilities">
+              <h4>Capabilities:</h4>
+              <ul>
+                <li>localStorage/sessionStorage support</li>
+                <li>Automatic save/load</li>
+                <li>Data versioning & migrations</li>
+                <li>Selective persistence (include/exclude)</li>
+                <li>Error handling & recovery</li>
+              </ul>
+            </div>
+            <div class="code-snippet">
+              <h4>Usage:</h4>
+              <pre><code>withPersistence('store-key')</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Feature -->
+        <div class="feature-card">
+          <h3>📊 Analytics Feature</h3>
+          <div class="feature-description">
+            <p>Event tracking and performance metrics</p>
+            <div class="feature-capabilities">
+              <h4>Capabilities:</h4>
+              <ul>
+                <li>Event tracking (clicks, purchases, etc.)</li>
+                <li>Performance metrics monitoring</li>
+                <li>User behavior analysis</li>
+                <li>Conversion tracking</li>
+                <li>Session management</li>
+              </ul>
+            </div>
+            <div class="code-snippet">
+              <h4>Usage:</h4>
+              <pre><code>withAnalytics(&#123; enablePerformanceTracking: true &#125;)</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Composition -->
+      <div class="composition-example">
+        <h3>🎯 Feature Composition Example</h3>
+        <p>Here's how multiple features work together in the cart store:</p>
+        <div class="composition-code">
+          <pre><code>export const CartStore = signalStore(
+  &#123; providedIn: 'root' &#125;,
+  
+  // Core state
+  withState&lt;CartState&gt;(&#123; /* initial state */ &#125;),
+  withEntities&lt;CartItem&gt;(),
+  
+  // Custom features - reusable and composable!
+  withTaxCalculator(),
+  withDiscounts(),
+  withPersistence(&#123;
+    key: 'cart-store',
+    storage: 'localStorage',
+    version: 1,
+    exclude: ['isLoading', 'error']
+  &#125;),
+  withAnalytics(&#123; enablePerformanceTracking: true &#125;),
+  
+  // Enhanced computed properties using features
+  withComputed((store) => (&#123;
+    enhancedCartSummary: computed(() => &#123;
+      const items = store.entities();
+      const taxResult = store.calculateTax(/* ... */);
+      const discountResult = store.calculateDiscounts(/* ... */);
+      return &#123; /* enhanced summary */ &#125;;
+    &#125;)
+  &#125;)),
+  
+  // Methods that leverage features
+  withMethods((store) => (&#123;
+    addItem(product: Product) &#123;
+      // Add to cart
+      patchState(store, addEntity(newItem));
+      
+      // Track with analytics
+      store.trackCartAdd(product.id, product.price);
+      
+      // Auto-apply best discounts
+      store.autoApplyBestDiscounts(/* ... */);
+    &#125;
+  &#125;))
+);</code></pre>
+        </div>
+      </div>
+
+      <!-- Benefits -->
+      <div class="benefits-section">
+        <h3>✨ Benefits of Custom Store Features</h3>
+        <div class="benefits-grid">
+          <div class="benefit-item">
+            <h4>🔄 Reusability</h4>
+            <p>Features can be used across multiple stores without code duplication</p>
+          </div>
+          <div class="benefit-item">
+            <h4>🧩 Composability</h4>
+            <p>Mix and match features to create stores tailored to specific needs</p>
+          </div>
+          <div class="benefit-item">
+            <h4>🛡️ Type Safety</h4>
+            <p>Full TypeScript support with proper type inference</p>
+          </div>
+          <div class="benefit-item">
+            <h4>🧪 Testability</h4>
+            <p>Each feature can be tested independently</p>
+          </div>
+          <div class="benefit-item">
+            <h4>🔧 Maintainability</h4>
+            <p>Logic is organized into focused, single-responsibility features</p>
+          </div>
+          <div class="benefit-item">
+            <h4>⚡ Performance</h4>
+            <p>Features leverage signals for optimal change detection</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Demonstration -->
+      <div class="live-demo-section">
+        <h3>🚀 Live Demonstration</h3>
+        <p>This demonstrates the enhanced cart with custom features in action:</p>
+        
+        <div class="demo-grid">
+          <!-- Enhanced Cart Summary -->
+          <div class="demo-card">
+            <h4>📊 Enhanced Cart Summary</h4>
+            @if (featuresStore.enhancedCartSummary().totalItems > 0) {
+              <div class="enhanced-summary">
+                <div class="summary-row">
+                  <span>Items:</span>
+                  <span>{{ featuresStore.enhancedCartSummary().totalItems }}</span>
+                </div>
+                <div class="summary-row">
+                  <span>Subtotal:</span>
+                  <span>{{ featuresStore.enhancedCartSummary().totalPrice | currency }}</span>
+                </div>
+                <div class="summary-row discount">
+                  <span>Discounts:</span>
+                  <span>-{{ featuresStore.enhancedCartSummary().totalDiscount | currency }}</span>
+                </div>
+                <div class="summary-breakdown">
+                  <h5>🧮 Tax Breakdown:</h5>
+                  <div class="tax-details">
+                    <div class="tax-row">
+                      <span>Standard Tax ({{ (featuresStore.enhancedCartSummary().taxBreakdown.effectiveRate * 100).toFixed(1) }}%):</span>
+                      <span>{{ featuresStore.enhancedCartSummary().taxBreakdown.standardTax | currency }}</span>
+                    </div>
+                    @if (featuresStore.enhancedCartSummary().taxBreakdown.luxuryTax > 0) {
+                      <div class="tax-row">
+                        <span>Luxury Tax:</span>
+                        <span>{{ featuresStore.enhancedCartSummary().taxBreakdown.luxuryTax | currency }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="summary-row">
+                  <span>Shipping:</span>
+                  <span>
+                    @if (featuresStore.enhancedCartSummary().shippingCost === 0) {
+                      FREE ✓
+                    } @else {
+                      {{ featuresStore.enhancedCartSummary().shippingCost | currency }}
+                    }
+                  </span>
+                </div>
+                <div class="summary-row total">
+                  <span>Final Total:</span>
+                  <span>{{ featuresStore.enhancedCartSummary().finalPrice | currency }}</span>
+                </div>
+                <div class="delivery-info">
+                  📦 {{ featuresStore.enhancedCartSummary().estimatedDelivery }}
+                </div>
+              </div>
+            } @else {
+              <p class="no-data">Add items to cart to see enhanced features in action</p>
+            }
+          </div>
+
+          <!-- Feature Status -->
+          <div class="demo-card">
+            <h4>⚙️ Active Features</h4>
+            <div class="feature-status">
+              <div class="status-item active">
+                <span>🧮 Tax Calculator</span>
+                <span class="status-badge">ACTIVE</span>
+              </div>
+              <div class="status-item active">
+                <span>💰 Discounts</span>
+                <span class="status-badge">ACTIVE</span>
+              </div>
+              <div class="status-item active">
+                <span>💾 Persistence</span>
+                <span class="status-badge">ACTIVE</span>
+              </div>
+              <div class="status-item active">
+                <span>📊 Analytics</span>
+                <span class="status-badge">ACTIVE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-world Usage -->
+      <div class="usage-examples">
+        <h3>🌍 Real-world Usage Examples</h3>
+        <div class="usage-grid">
+          <div class="usage-example">
+            <h4>E-commerce Store</h4>
+            <code>withTaxCalculator() + withDiscounts() + withPersistence()</code>
+          </div>
+          <div class="usage-example">
+            <h4>Analytics Dashboard</h4>
+            <code>withAnalytics() + withPersistence() + withReporting()</code>
+          </div>
+          <div class="usage-example">
+            <h4>Form Builder</h4>
+            <code>withValidation() + withPersistence() + withUndo()</code>
+          </div>
+          <div class="usage-example">
+            <h4>Game State</h4>
+            <code>withScoring() + withPersistence() + withAchievements()</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

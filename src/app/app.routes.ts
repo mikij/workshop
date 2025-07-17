@@ -22,6 +22,11 @@ export const routes: Routes = [
     title: 'Shopping Cart - Advanced Level (Resource API)'
   },
   {
+    path: 'ngrx-signals',
+    redirectTo: '/advanced/ngrx-signals',
+    pathMatch: 'full'
+  },
+  {
     path: 'control-flow',
     loadChildren: () => import('./control-flow/control-flow.routes').then(m => m.CONTROL_FLOW_ROUTES),
     title: 'Control Flow - Modern Template Syntax (@if, @for, @switch, @defer)'
