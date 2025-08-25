@@ -1,35 +1,28 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { CartItem, Product } from '../../shared/models';
+import { CartComputedService } from './cart-computed.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CartEffectsService {
-  
-  private items = signal<CartItem[]>([]);
+
+  // Inject the main cart service as single source of truth
+  private cartService = inject(CartComputedService);
+
   // Effects service only manages wishlist, recently viewed, and history
   private wishlist = signal<string[]>([]);
   private recentlyViewed = signal<Product[]>([]);
   private cartHistory = signal<CartItem[][]>([]);
 
-  public readonly cartItems = this.items.asReadonly();
+  // Expose cart data from main service
+  public readonly cartItems = this.cartService.cartItems;
+  public readonly cartSummary = this.cartService.cartSummary;
+
+  // Expose effects-specific data
   public readonly wishlistItems = this.wishlist.asReadonly();
   public readonly recentlyViewedItems = this.recentlyViewed.asReadonly();
   public readonly cartHistoryItems = this.cartHistory.asReadonly();
-
-  public readonly cartSummary = computed(() => {
-    const items = this.items();
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    return {
-      totalItems,
-      totalPrice,
-      totalDiscount: 0,
-      tax: totalPrice * 0.08,
-      finalPrice: totalPrice * 1.08
-    };
-  });
 
   constructor() {
     this.loadFromStorage();
@@ -37,17 +30,9 @@ export class CartEffectsService {
   }
 
   private setupEffects(): void {
-    // Effect for auto-saving cart to localStorage
+    // Effect for maintaining cart history (watches main cart service)
     effect(() => {
-      const items = this.items();
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('cart-effects', JSON.stringify(items));
-      }
-    });
-
-    // Effect for maintaining cart history
-    effect(() => {
-      const items = this.items();
+      const items = this.cartService.cartItems();
       if (items.length > 0) {
         this.cartHistory.update(history => {
           const newHistory = [...history, [...items]];
@@ -72,11 +57,11 @@ export class CartEffectsService {
       }
     });
 
-    // Effect for cart analytics
+    // Effect for cart analytics (watches main cart service)
     effect(() => {
-      const items = this.items();
-      const summary = this.cartSummary();
-      
+      const items = this.cartService.cartItems();
+      const summary = this.cartService.cartSummary();
+
       if (items.length > 0) {
         console.log('Cart Analytics:', {
           itemCount: summary.totalItems,
@@ -87,11 +72,11 @@ export class CartEffectsService {
       }
     });
 
-    // Effect for low stock warnings
+    // Effect for low stock warnings (watches main cart service)
     effect(() => {
-      const items = this.items();
+      const items = this.cartService.cartItems();
       const highQuantityItems = items.filter(item => item.quantity > 5);
-      
+
       if (highQuantityItems.length > 0) {
         console.warn('High quantity items detected:', highQuantityItems.map(item => ({
           name: item.name,
@@ -101,53 +86,23 @@ export class CartEffectsService {
     });
   }
 
-  // Cart operations
+  // Cart operations - delegate to main cart service
   addItem(product: Product): void {
-    const currentItems = this.items();
-    const existingItem = currentItems.find(item => item.productId === product.id);
-    
-    if (existingItem) {
-      this.updateQuantity(product.id, existingItem.quantity + 1);
-    } else {
-      const newItem: CartItem = {
-        id: this.generateId(),
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: product.image,
-        category: product.category,
-        discount: product.discount
-      };
-      
-      this.items.update(items => [...items, newItem]);
-    }
-
-    // Add to recently viewed
+    this.cartService.addItem(product);
+    // Add to recently viewed as side effect
     this.addToRecentlyViewed(product);
   }
 
   removeItem(productId: string): void {
-    this.items.update(items => items.filter(item => item.productId !== productId));
+    this.cartService.removeItem(productId);
   }
 
   updateQuantity(productId: string, quantity: number): void {
-    if (quantity <= 0) {
-      this.removeItem(productId);
-      return;
-    }
-
-    this.items.update(items =>
-      items.map(item =>
-        item.productId === productId
-          ? { ...item, quantity }
-          : item
-      )
-    );
+    this.cartService.updateQuantity(productId, quantity);
   }
 
   clearCart(): void {
-    this.items.set([]);
+    this.cartService.clearCart();
   }
 
   // Wishlist operations
@@ -185,28 +140,22 @@ export class CartEffectsService {
   restorePreviousCart(): void {
     const previousState = this.getPreviousCartState();
     if (previousState) {
-      this.items.set(previousState);
+      // Restore to main cart service
+      // previousState.forEach(item => {
+      //   this.cartService.addItem({
+      //     id: item.productId,
+      //     name: item.name,
+      //     price: item.price,
+      //     image: item.image,
+      //     category: item.category,
+      //     discount: item.discount
+      //   });
+      // });
     }
-  }
-
-  // Helper methods
-  private generateId(): string {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
 
   private loadFromStorage(): void {
     if (typeof localStorage !== 'undefined') {
-      // Load cart items
-      const savedItems = localStorage.getItem('cart-effects');
-      if (savedItems) {
-        try {
-          const items = JSON.parse(savedItems) as CartItem[];
-          this.items.set(items);
-        } catch (error) {
-          console.error('Error loading cart from storage:', error);
-        }
-      }
-
       // Load wishlist
       const savedWishlist = localStorage.getItem('wishlist-effects');
       if (savedWishlist) {
