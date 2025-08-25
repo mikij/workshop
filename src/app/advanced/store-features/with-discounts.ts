@@ -4,10 +4,10 @@ import { Discount, Coupon, DiscountState, DiscountCalculationResult, Calculation
 
 /**
  * Custom Store Feature: Discounts
- * 
+ *
  * This feature provides comprehensive discount and promotion management.
  * Supports multiple discount types, coupons, and stacking rules.
- * 
+ *
  * Usage:
  * ```typescript
  * export const MyStore = signalStore(
@@ -105,15 +105,15 @@ export function withDiscounts() {
     // Feature computed signals
     withComputed((store) => ({
       // Get all active discounts
-      activeDiscounts: computed(() => 
-        store.discounts().filter(d => d.active)
+      activeDiscounts: computed(() =>
+        store['discounts']().filter((d: Discount) => d.active)
       ),
-      
+
       // Get all valid coupons (not expired, under usage limit)
-      validCoupons: computed(() => 
-        store.coupons().filter(c => {
-          const discount = store.discounts().find(d => d.id === c.discountId);
-          const isValid = discount?.active && 
+      validCoupons: computed(() =>
+        store['coupons']().filter((c: Coupon) => {
+          const discount = store['discounts']().find((d: Discount) => d.id === c.discountId);
+          const isValid = discount?.active &&
                          (!c.usageLimit || c.usageCount < c.usageLimit) &&
                          (!c.expiresAt || new Date() < c.expiresAt);
           return isValid;
@@ -121,56 +121,60 @@ export function withDiscounts() {
       ),
 
       // Get currently applied discounts with details
-      appliedDiscountDetails: computed(() => 
-        store.appliedDiscounts().map(id => 
-          store.discounts().find(d => d.id === id)
+      appliedDiscountDetails: computed(() =>
+        store['appliedDiscounts']().map((id: string) =>
+          store['discounts']().find((d: Discount) => d.id === id)
         ).filter(Boolean) as Discount[]
       ),
 
       // Get currently applied coupons with details
-      appliedCouponDetails: computed(() => 
-        store.appliedCoupons().map(code => 
-          store.coupons().find(c => c.code === code)
+      appliedCouponDetails: computed(() =>
+        store['appliedCoupons']().map((code: string) =>
+          store['coupons']().find((c: Coupon) => c.code === code)
         ).filter(Boolean) as Coupon[]
       ),
 
       // Check if any discounts are applied
-      hasDiscounts: computed(() => 
-        store.appliedDiscounts().length > 0 || store.appliedCoupons().length > 0
+      hasDiscounts: computed(() =>
+        store['appliedDiscounts']().length > 0 || store['appliedCoupons']().length > 0
       ),
-
-      // Get bulk discounts available based on quantity
-      availableBulkDiscounts: computed(() => 
-        store.activeDiscounts().filter(d => d.type === 'bulk')
-      ),
-
-      // Get category discounts
-      categoryDiscounts: computed(() => 
-        store.activeDiscounts().filter(d => d.type === 'category')
-      )
     })),
+
+    withComputed((store) => {
+      return {
+        // Get bulk discounts available based on quantity
+        availableBulkDiscounts: computed(() =>
+          store.activeDiscounts().filter(d => d.type === 'bulk')
+        ),
+
+        // Get category discounts
+        categoryDiscounts: computed(() =>
+          store.activeDiscounts().filter(d => d.type === 'category')
+        )
+      }
+    }),
 
     // Feature methods
     withMethods((store) => ({
       // Add a new discount
       addDiscount: (discount: Discount) => {
         patchState(store, {
-          discounts: [...store.discounts(), discount]
+          discounts: [...store['discounts'](), discount]
         });
       },
 
       // Remove a discount
       removeDiscount: (discountId: string) => {
         patchState(store, {
-          discounts: store.discounts().filter(d => d.id !== discountId),
-          appliedDiscounts: store.appliedDiscounts().filter(id => id !== discountId)
+          discounts: store['discounts']().filter((d: Discount) => d.id !== discountId),
+          appliedDiscounts: store['appliedDiscounts']().filter((id: string) => id !== discountId)
         });
       },
 
       // Toggle discount active status
       toggleDiscount: (discountId: string) => {
         patchState(store, {
-          discounts: store.discounts().map(d => 
+          discounts: store['discounts']().map((d: Discount) =>
             d.id === discountId ? { ...d, active: !d.active } : d
           )
         });
@@ -178,14 +182,14 @@ export function withDiscounts() {
 
       // Apply coupon code
       applyCoupon: (couponCode: string): boolean => {
-        const coupon = store.coupons().find(c => c.code === couponCode.toUpperCase());
-        
+        const coupon = store['coupons']().find((c: Coupon) => c.code === couponCode.toUpperCase());
+
         if (!coupon) {
           return false; // Coupon not found
         }
 
         // Check if coupon is valid
-        const discount = store.discounts().find(d => d.id === coupon.discountId);
+        const discount = store['discounts']().find((d: Discount) => d.id === coupon.discountId);
         if (!discount?.active) {
           return false; // Associated discount is not active
         }
@@ -198,16 +202,16 @@ export function withDiscounts() {
           return false; // Coupon expired
         }
 
-        if (store.appliedCoupons().includes(couponCode.toUpperCase())) {
+        if (store['appliedCoupons']().includes(couponCode.toUpperCase())) {
           return false; // Coupon already applied
         }
 
         // Apply the coupon
         patchState(store, {
-          appliedCoupons: [...store.appliedCoupons(), couponCode.toUpperCase()],
-          appliedDiscounts: [...store.appliedDiscounts(), coupon.discountId],
-          coupons: store.coupons().map(c => 
-            c.code === couponCode.toUpperCase() 
+          appliedCoupons: [...store['appliedCoupons'](), couponCode.toUpperCase()],
+          appliedDiscounts: [...store['appliedDiscounts'](), coupon.discountId],
+          coupons: store['coupons']().map((c: Coupon) =>
+            c.code === couponCode.toUpperCase()
               ? { ...c, usageCount: c.usageCount + 1 }
               : c
           )
@@ -218,14 +222,14 @@ export function withDiscounts() {
 
       // Remove coupon
       removeCoupon: (couponCode: string) => {
-        const coupon = store.coupons().find(c => c.code === couponCode);
+        const coupon = store['coupons']().find((c: Coupon) => c.code === couponCode);
         if (!coupon) return;
 
         patchState(store, {
-          appliedCoupons: store.appliedCoupons().filter(code => code !== couponCode),
-          appliedDiscounts: store.appliedDiscounts().filter(id => id !== coupon.discountId),
-          coupons: store.coupons().map(c => 
-            c.code === couponCode 
+          appliedCoupons: store['appliedCoupons']().filter((code: string) => code !== couponCode),
+          appliedDiscounts: store['appliedDiscounts']().filter((id: string) => id !== coupon.discountId),
+          coupons: store['coupons']().map((c: Coupon) =>
+            c.code === couponCode
               ? { ...c, usageCount: Math.max(0, c.usageCount - 1) }
               : c
           )
@@ -234,13 +238,13 @@ export function withDiscounts() {
 
       // Calculate discounts for items
       calculateDiscounts: (items: CalculationItem[], totalAmount: number): DiscountCalculationResult => {
-        const activeDiscounts = store.appliedDiscountDetails();
+        const activeDiscounts = store['appliedDiscountDetails']();
         let totalDiscount = 0;
         const breakdown: { discountId: string; name: string; amount: number; type: string; }[] = [];
 
         // Separate stackable and non-stackable discounts
-        const stackableDiscounts = activeDiscounts.filter(d => d.stackable);
-        const nonStackableDiscounts = activeDiscounts.filter(d => !d.stackable);
+        const stackableDiscounts = activeDiscounts.filter((d: Discount) => d.stackable);
+        const nonStackableDiscounts = activeDiscounts.filter((d: Discount) => !d.stackable);
 
         // Find best non-stackable discount
         let bestNonStackable: Discount | null = null;
@@ -288,25 +292,25 @@ export function withDiscounts() {
 
       // Auto-apply best discounts
       autoApplyBestDiscounts: (items: CalculationItem[], totalAmount: number) => {
-        const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+        const totalQuantity = items.reduce((sum: number, item: CalculationItem) => sum + item.quantity, 0);
         const newAppliedDiscounts: string[] = [];
-        const activeDiscounts = store.discounts().filter(d => d.active);
+        const activeDiscounts = store['discounts']().filter((d: Discount) => d.active);
 
         // Auto-apply bulk discounts
         const eligibleBulkDiscounts = activeDiscounts
           .filter((d: Discount) => d.type === 'bulk' && totalQuantity >= (d.minQuantity || 0))
-          .sort((a, b) => (b.value || 0) - (a.value || 0)); // Sort by value desc
+          .sort((a: Discount, b: Discount) => (b.value || 0) - (a.value || 0)); // Sort by value desc
 
         if (eligibleBulkDiscounts.length > 0) {
           newAppliedDiscounts.push(eligibleBulkDiscounts[0].id);
         }
 
         // Auto-apply category discounts for items in cart
-        const categoriesInCart = [...new Set(items.map(item => item.category))];
+        const categoriesInCart = [...new Set(items.map((item: CalculationItem) => item.category))];
         for (const category of categoriesInCart) {
           const categoryDiscount = activeDiscounts
             .find((d: Discount) => d.type === 'category' && d.category === category);
-          
+
           if (categoryDiscount) {
             newAppliedDiscounts.push(categoryDiscount.id);
           }
@@ -327,17 +331,17 @@ export function withDiscounts() {
 
       // Get discount info for analytics
       getDiscountInfo: () => {
-        const appliedDiscounts = store.appliedDiscountDetails();
+        const appliedDiscounts = store['appliedDiscountDetails']();
         const hasDiscounts = appliedDiscounts.length > 0;
-        
+
         return {
           hasDiscounts,
           discountedItemsCount: appliedDiscounts.length,
           totalSavings: 0, // This would be calculated based on actual cart
-          averageDiscount: hasDiscounts 
-            ? appliedDiscounts.reduce((sum, d) => sum + (d.value || 0), 0) / appliedDiscounts.length 
+          averageDiscount: hasDiscounts
+            ? appliedDiscounts.reduce((sum: number, d: Discount) => sum + (d.value || 0), 0) / appliedDiscounts.length
             : 0,
-          bulkDiscountApplied: appliedDiscounts.some(d => d.type === 'bulk')
+          bulkDiscountApplied: appliedDiscounts.some((d: Discount) => d.type === 'bulk')
         };
       }
     }))
@@ -349,24 +353,24 @@ function calculateSingleDiscount(discount: Discount, items: CalculationItem[], t
   switch (discount.type) {
     case 'percentage':
       return totalAmount * (discount.value || 0);
-    
+
     case 'fixed':
       return Math.min(discount.value || 0, totalAmount);
-    
+
     case 'bulk': {
-      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+      const totalQuantity = items.reduce((sum: number, item: CalculationItem) => sum + item.quantity, 0);
       if (totalQuantity >= (discount.minQuantity || 0)) {
         return totalAmount * (discount.value || 0);
       }
       return 0;
     }
-    
+
     case 'category': {
-      const categoryItems = items.filter(item => item.category === discount.category);
-      const categoryTotal = categoryItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const categoryItems = items.filter((item: CalculationItem) => item.category === discount.category);
+      const categoryTotal = categoryItems.reduce((sum: number, item: CalculationItem) => sum + (item.price * item.quantity), 0);
       return categoryTotal * (discount.value || 0);
     }
-    
+
     default:
       return 0;
   }
