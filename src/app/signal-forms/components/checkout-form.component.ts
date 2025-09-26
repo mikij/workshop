@@ -1,25 +1,25 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { form, required, email, pattern, applyWhen, submit } from '@angular/forms/signals';
+import { form, required, email, pattern, applyWhen, submit, Control } from '@angular/forms/signals';
 
 /**
  * 🛒 TASK 2: MULTI-STEP CHECKOUT FORM (INTERMEDIATE LEVEL)
- * 
+ *
  * LEARNING OBJECTIVES:
  * - Build complex multi-step forms with signal forms
  * - Implement conditional validation based on user selections
  * - Handle cross-field validation and dependencies
  * - Manage form state across multiple steps
  * - Create smooth user experience with step navigation
- * 
+ *
  * WORKSHOP INSTRUCTIONS:
  * 1. Create multi-step form with signal-driven navigation
  * 2. Implement conditional validation for payment methods
  * 3. Add cross-field validation for address matching
  * 4. Create progress indicator with signals
  * 5. Handle form submission with comprehensive error handling
- * 
+ *
  * SUCCESS CRITERIA:
  * ✅ Step navigation works smoothly
  * ✅ Conditional validation based on payment method
@@ -68,7 +68,7 @@ interface CheckoutFormData {
 @Component({
   selector: 'app-checkout-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, Control],
   template: `
     <div class="checkout-container">
       <h2>🛒 Multi-Step Checkout Form</h2>
@@ -96,29 +96,32 @@ interface CheckoutFormData {
 
       <!-- TODO: Replace with signal-driven form -->
       <form class="checkout-form">
-        
+
         <!-- STEP 1: SHIPPING INFORMATION -->
         @if (currentStep() === 'shipping') {
           <div class="form-step">
             <h3>📦 Shipping Information</h3>
-            
+
             <div class="form-row">
               <div class="form-group">
                 <label for="firstName">First Name *</label>
-                <input 
+                <input
                   id="firstName"
                   type="text"
                   class="form-control"
+                  [class.error]="getFieldError('shipping.firstName')"
+                  [control]="checkoutForm.shipping.firstName"
                   placeholder="John">
-                <!-- TODO: Add signal-driven validation -->
-                <div class="error-placeholder">
-                  <p>⚠️ TODO: First name validation</p>
-                </div>
+                @if (getFieldError('shipping.firstName') && checkoutForm.shipping.firstName().touched()) {
+                  <div class="error-message">
+                    {{ getFieldError('shipping.firstName') }}
+                  </div>
+                }
               </div>
-              
+
               <div class="form-group">
                 <label for="lastName">Last Name *</label>
-                <input 
+                <input
                   id="lastName"
                   type="text"
                   class="form-control"
@@ -133,7 +136,7 @@ interface CheckoutFormData {
             <div class="form-row">
               <div class="form-group">
                 <label for="email">Email Address *</label>
-                <input 
+                <input
                   id="email"
                   type="email"
                   class="form-control"
@@ -143,10 +146,10 @@ interface CheckoutFormData {
                   <p>⚠️ TODO: Email validation</p>
                 </div>
               </div>
-              
+
               <div class="form-group">
                 <label for="phone">Phone Number *</label>
-                <input 
+                <input
                   id="phone"
                   type="tel"
                   class="form-control"
@@ -160,7 +163,7 @@ interface CheckoutFormData {
 
             <div class="form-group">
               <label for="address">Address *</label>
-              <input 
+              <input
                 id="address"
                 type="text"
                 class="form-control"
@@ -174,13 +177,13 @@ interface CheckoutFormData {
             <div class="form-row">
               <div class="form-group">
                 <label for="city">City *</label>
-                <input 
+                <input
                   id="city"
                   type="text"
                   class="form-control"
                   placeholder="New York">
               </div>
-              
+
               <div class="form-group">
                 <label for="state">State *</label>
                 <select id="state" class="form-control">
@@ -191,10 +194,10 @@ interface CheckoutFormData {
                   <!-- Add more states -->
                 </select>
               </div>
-              
+
               <div class="form-group">
                 <label for="zipCode">ZIP Code *</label>
-                <input 
+                <input
                   id="zipCode"
                   type="text"
                   class="form-control"
@@ -208,64 +211,76 @@ interface CheckoutFormData {
         @if (currentStep() === 'payment') {
           <div class="form-step">
             <h3>💳 Payment Information</h3>
-            
+
             <div class="form-group">
               <label>Payment Method *</label>
               <div class="radio-group">
                 <div class="radio-option">
-                  <input 
+                  <input
                     id="credit"
                     type="radio"
                     name="paymentMethod"
-                    value="credit">
+                    value="credit"
+                    [checked]="checkoutForm.payment.method().value() === 'credit'"
+                    (change)="checkoutForm.payment.method().value.set('credit')">
                   <label for="credit">💳 Credit Card</label>
                 </div>
                 <div class="radio-option">
-                  <input 
+                  <input
                     id="debit"
                     type="radio"
                     name="paymentMethod"
-                    value="debit">
+                    value="debit"
+                    [checked]="checkoutForm.payment.method().value() === 'debit'"
+                    (change)="checkoutForm.payment.method().value.set('debit')">
                   <label for="debit">💳 Debit Card</label>
                 </div>
                 <div class="radio-option">
-                  <input 
+                  <input
                     id="paypal"
                     type="radio"
                     name="paymentMethod"
-                    value="paypal">
+                    value="paypal"
+                    [checked]="checkoutForm.payment.method().value() === 'paypal'"
+                    (change)="checkoutForm.payment.method().value.set('paypal')">
                   <label for="paypal">🏦 PayPal</label>
                 </div>
               </div>
             </div>
 
-            <!-- TODO: Conditional card fields based on payment method -->
-            <div class="conditional-fields-placeholder">
-              <p>⚠️ TODO: Show card fields only when credit/debit selected</p>
+            <!-- Conditional card fields based on payment method -->
+            @if (checkoutForm.payment.method().value() !== 'paypal') {
               <div class="form-row">
                 <div class="form-group">
                   <label for="cardNumber">Card Number *</label>
-                  <input 
+                  <input
                     id="cardNumber"
                     type="text"
                     class="form-control"
+                    [class.error]="getFieldError('payment.cardNumber')"
+                    [control]="checkoutForm.payment.cardNumber"
                     placeholder="1234 5678 9012 3456">
+                  @if (getFieldError('payment.cardNumber') && checkoutForm.payment.cardNumber().touched()) {
+                    <div class="error-message">
+                      {{ getFieldError('payment.cardNumber') }}
+                    </div>
+                  }
                 </div>
               </div>
-              
+
               <div class="form-row">
                 <div class="form-group">
                   <label for="expiryDate">Expiry Date *</label>
-                  <input 
+                  <input
                     id="expiryDate"
                     type="text"
                     class="form-control"
                     placeholder="MM/YY">
                 </div>
-                
+
                 <div class="form-group">
                   <label for="cvv">CVV *</label>
-                  <input 
+                  <input
                     id="cvv"
                     type="text"
                     class="form-control"
@@ -275,19 +290,26 @@ interface CheckoutFormData {
 
               <div class="form-group">
                 <label for="cardholderName">Cardholder Name *</label>
-                <input 
+                <input
                   id="cardholderName"
                   type="text"
                   class="form-control"
+                  [class.error]="getFieldError('payment.cardholderName')"
+                  [control]="checkoutForm.payment.cardholderName"
                   placeholder="John Doe">
+                @if (getFieldError('payment.cardholderName') && checkoutForm.payment.cardholderName().touched()) {
+                  <div class="error-message">
+                    {{ getFieldError('payment.cardholderName') }}
+                  </div>
+                }
               </div>
-            </div>
+            }
 
             <!-- Billing Address -->
             <h4>🏠 Billing Address</h4>
             <div class="form-group">
               <div class="checkbox-wrapper">
-                <input 
+                <input
                   id="sameAsShipping"
                   type="checkbox"
                   class="checkbox">
@@ -307,7 +329,7 @@ interface CheckoutFormData {
         @if (currentStep() === 'review') {
           <div class="form-step">
             <h3>📋 Review Your Order</h3>
-            
+
             <!-- Order Summary -->
             <div class="order-summary">
               <!-- TODO: Display form data summary -->
@@ -328,7 +350,7 @@ interface CheckoutFormData {
             <h4>📦 Shipping Options</h4>
             <div class="form-group">
               <div class="checkbox-wrapper">
-                <input 
+                <input
                   id="expeditedShipping"
                   type="checkbox"
                   class="checkbox">
@@ -338,7 +360,7 @@ interface CheckoutFormData {
 
             <div class="form-group">
               <div class="checkbox-wrapper">
-                <input 
+                <input
                   id="giftWrap"
                   type="checkbox"
                   class="checkbox">
@@ -348,7 +370,7 @@ interface CheckoutFormData {
 
             <div class="form-group">
               <label for="specialInstructions">Special Instructions</label>
-              <textarea 
+              <textarea
                 id="specialInstructions"
                 class="form-control"
                 rows="3"
@@ -358,7 +380,7 @@ interface CheckoutFormData {
             <!-- Terms and Conditions -->
             <div class="form-group">
               <div class="checkbox-wrapper">
-                <input 
+                <input
                   id="agreeToTerms"
                   type="checkbox"
                   class="checkbox">
@@ -372,7 +394,7 @@ interface CheckoutFormData {
 
         <!-- Form Navigation -->
         <div class="form-navigation">
-          <button 
+          <button
             type="button"
             class="btn btn-secondary"
             [disabled]="currentStep() === 'shipping'"
@@ -381,7 +403,7 @@ interface CheckoutFormData {
           </button>
 
           @if (currentStep() !== 'review') {
-            <button 
+            <button
               type="button"
               class="btn btn-primary"
               [disabled]="!canProceedToNextStep()"
@@ -389,7 +411,7 @@ interface CheckoutFormData {
               Next →
             </button>
           } @else {
-            <button 
+            <button
               type="submit"
               class="btn btn-success"
               [disabled]="!isFormValid()"
@@ -405,15 +427,12 @@ interface CheckoutFormData {
       <div class="validation-status">
         <h4>🔍 Step Validation Status</h4>
         <div class="status-grid">
-          <!-- TODO: Add signal-driven step validation status -->
-          <div class="status-placeholder">
-            <p>⚠️ TODO: Show validation status for each step</p>
-            <ul>
-              <li>Shipping: <code>unknown</code></li>
-              <li>Payment: <code>unknown</code></li>
-              <li>Review: <code>unknown</code></li>
-            </ul>
-          </div>
+          <ul>
+            <li>Shipping: <code [class.valid]="isShippingValid()" [class.invalid]="!isShippingValid()">{{ isShippingValid() ? '✅ Valid' : '❌ Invalid' }}</code></li>
+            <li>Payment: <code [class.valid]="isPaymentValid()" [class.invalid]="!isPaymentValid()">{{ isPaymentValid() ? '✅ Valid' : '❌ Invalid' }}</code></li>
+            <li>Review: <code [class.valid]="isReviewValid()" [class.invalid]="!isReviewValid()">{{ isReviewValid() ? '✅ Valid' : '❌ Invalid' }}</code></li>
+            <li>Current Method: <code>{{ checkoutForm.payment.method().value() }}</code></li>
+          </ul>
         </div>
       </div>
     </div>
@@ -715,7 +734,8 @@ interface CheckoutFormData {
       justify-content: space-between;
     }
 
-    .status-placeholder code {
+    .status-placeholder code,
+    .validation-status code {
       background: #e9ecef;
       padding: 0.125rem 0.25rem;
       border-radius: 4px;
@@ -723,23 +743,47 @@ interface CheckoutFormData {
       font-size: 0.8rem;
     }
 
+    .validation-status code.valid {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .validation-status code.invalid {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .form-control.error {
+      border-color: #dc3545;
+    }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
+
     @media (max-width: 768px) {
       .checkout-container {
         padding: 1rem;
       }
-      
+
       .form-row {
         grid-template-columns: 1fr;
       }
-      
+
       .progress-steps {
         padding: 1rem;
       }
-      
+
       .step-divider {
         display: none;
       }
-      
+
       .form-navigation {
         flex-direction: column;
         gap: 1rem;
@@ -748,15 +792,91 @@ interface CheckoutFormData {
   `]
 })
 export class CheckoutFormComponent {
-  
-  // TODO: Replace with signal form implementation
+
+  // Signal Form Implementation
+  checkoutForm = form(
+    signal<CheckoutFormData>({
+      shipping: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: ''
+      },
+      payment: {
+        method: 'credit' as const,
+        cardNumber: '',
+        expiryDate: '',
+        cvv: '',
+        cardholderName: '',
+        billingAddress: {
+          sameAsShipping: true,
+          address: '',
+          city: '',
+          state: '',
+          zipCode: ''
+        }
+      },
+      options: {
+        expeditedShipping: false,
+        giftWrap: false,
+        specialInstructions: ''
+      }
+    }),
+    (f) => {
+      // Shipping validation
+      required(f.shipping.firstName);
+      required(f.shipping.lastName);
+      required(f.shipping.email);
+      email(f.shipping.email);
+      required(f.shipping.phone);
+      required(f.shipping.address);
+      required(f.shipping.city);
+      required(f.shipping.state);
+      required(f.shipping.zipCode);
+      pattern(f.shipping.zipCode, /^\d{5}$/);
+
+      // Conditional payment validation
+      applyWhen(
+        f,
+        ({ value }) => value().payment.method !== 'paypal',
+        (form) => {
+          required(form.payment.cardNumber);
+          pattern(form.payment.cardNumber, /^\d{16}$/);
+          required(form.payment.expiryDate);
+          pattern(form.payment.expiryDate, /^\d{2}\/\d{2}$/);
+          required(form.payment.cvv);
+          pattern(form.payment.cvv, /^\d{3,4}$/);
+          required(form.payment.cardholderName);
+        }
+      );
+
+      // Conditional billing address validation
+      applyWhen(
+        f,
+        ({ value }) => !value().payment.billingAddress.sameAsShipping,
+        (form) => {
+          required(form.payment.billingAddress.address);
+          required(form.payment.billingAddress.city);
+          required(form.payment.billingAddress.state);
+          required(form.payment.billingAddress.zipCode);
+          pattern(form.payment.billingAddress.zipCode, /^\d{5}$/);
+        }
+      );
+    }
+  );
+
+  // Current step management
   currentStep = signal<CheckoutStep>('shipping');
-  
+
   /**
    * 🎯 WORKSHOP TASK 2.1: CREATE MULTI-STEP SIGNAL FORM
-   * 
+   *
    * Create a comprehensive checkout form with signal-driven validation:
-   * 
+   *
    * checkoutForm = form(
    *   signal<CheckoutFormData>({
    *     shipping: { firstName: '', lastName: '', ... },
@@ -770,7 +890,7 @@ export class CheckoutFormComponent {
    *     required(f.shipping.email);
    *     email(f.shipping.email);
    *     // ... add more validations
-   *     
+   *
    *     // Conditional payment validation
    *     applyWhen(
    *       f,
@@ -785,24 +905,69 @@ export class CheckoutFormComponent {
    * );
    */
 
-  /**
-   * 🎯 WORKSHOP TASK 2.2: IMPLEMENT STEP VALIDATION
-   * 
-   * Create computed properties to track validation for each step:
-   */
-  isShippingValid = computed(() => {
-    // TODO: Check if all shipping fields are valid
-    return false;
+  // Step validation computed properties
+  isShippingValid = computed((): boolean => {
+    const shipping = this.checkoutForm.shipping;
+    return (
+      !shipping.firstName().errors().length &&
+      !shipping.lastName().errors().length &&
+      !shipping.email().errors().length &&
+      !shipping.phone().errors().length &&
+      !shipping.address().errors().length &&
+      !shipping.city().errors().length &&
+      !shipping.state().errors().length &&
+      !shipping.zipCode().errors().length &&
+      !!shipping.firstName().value() &&
+      !!shipping.lastName().value() &&
+      !!shipping.email().value() &&
+      !!shipping.phone().value() &&
+      !!shipping.address().value() &&
+      !!shipping.city().value() &&
+      !!shipping.state().value() &&
+      !!shipping.zipCode().value()
+    );
   });
 
-  isPaymentValid = computed(() => {
-    // TODO: Check if payment fields are valid based on selected method
-    return false;
+  isPaymentValid = computed((): boolean => {
+    const payment = this.checkoutForm.payment;
+    const paymentMethod = payment.method().value();
+
+    // PayPal doesn't need card validation
+    if (paymentMethod === 'paypal') {
+      return true;
+    }
+
+    // Card validation
+    const cardFieldsValid = (
+      !payment.cardNumber().errors().length &&
+      !payment.expiryDate().errors().length &&
+      !payment.cvv().errors().length &&
+      !payment.cardholderName().errors().length &&
+      !!payment.cardNumber().value() &&
+      !!payment.expiryDate().value() &&
+      !!payment.cvv().value() &&
+      !!payment.cardholderName().value()
+    );
+
+    // Billing address validation if different from shipping
+    const sameAsShipping = payment.billingAddress.sameAsShipping().value();
+    const billingValid = sameAsShipping || (
+      !payment.billingAddress.address().errors().length &&
+      !payment.billingAddress.city().errors().length &&
+      !payment.billingAddress.state().errors().length &&
+      !payment.billingAddress.zipCode().errors().length &&
+      !!payment.billingAddress.address().value() &&
+      !!payment.billingAddress.city().value() &&
+      !!payment.billingAddress.state().value() &&
+      !!payment.billingAddress.zipCode().value()
+    );
+
+    return cardFieldsValid && billingValid;
   });
 
-  isReviewValid = computed(() => {
-    // TODO: Check if terms are accepted and all data is complete
-    return false;
+  isReviewValid = computed((): boolean => {
+    // For review step, we just need shipping and payment to be valid
+    return this.isShippingValid() && this.isPaymentValid();
   });
 
   /**
@@ -843,27 +1008,71 @@ export class CheckoutFormComponent {
     }
   }
 
-  isStepCompleted(step: CheckoutStep): boolean {
-    // TODO: Determine if a step is completed
-    return false;
-  }
 
-  /**
-   * 🎯 WORKSHOP TASK 2.4: IMPLEMENT FORM SUBMISSION
-   */
+  // Form submission
   async onSubmit() {
-    // TODO: Implement checkout form submission using submit()
-    console.log('🚧 TODO: Implement checkout submission');
+    await submit(this.checkoutForm, async (form: any) => {
+      try {
+        const checkoutData = form().value();
+
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // Simulate success
+        console.log('✅ Order submitted successfully!', checkoutData);
+        alert('🎉 Order placed successfully! Order #' + Math.random().toString(36).substring(7).toUpperCase());
+
+        return []; // No errors
+      } catch (error) {
+        console.error('❌ Checkout failed:', error);
+        return []; // Handle errors in UI
+      }
+    });
   }
 
   isFormValid(): boolean {
-    // TODO: Check if entire form is valid
     return this.isShippingValid() && this.isPaymentValid() && this.isReviewValid();
+  }
+
+  isStepCompleted(step: CheckoutStep): boolean {
+    switch (step) {
+      case 'shipping': return this.isShippingValid();
+      case 'payment': return this.isPaymentValid();
+      case 'review': return this.isReviewValid();
+      default: return false;
+    }
+  }
+
+  // Helper methods for field errors
+  getFieldError(fieldPath: string): string | null {
+    const pathParts = fieldPath.split('.');
+    let field: any = this.checkoutForm();
+
+    for (const part of pathParts) {
+      field = field[part];
+      if (!field) return null;
+    }
+
+    const errors = field().errors();
+    if (errors.length === 0) return null;
+
+    const error = errors[0];
+    switch (error.kind) {
+      case 'required': return `This field is required`;
+      case 'email': return `Please enter a valid email address`;
+      case 'pattern':
+        if (fieldPath.includes('zipCode')) return `ZIP code must be 5 digits`;
+        if (fieldPath.includes('cardNumber')) return `Card number must be 16 digits`;
+        if (fieldPath.includes('expiryDate')) return `Format: MM/YY`;
+        if (fieldPath.includes('cvv')) return `CVV must be 3-4 digits`;
+        return `Invalid format`;
+      default: return error.message || 'Invalid value';
+    }
   }
 
   /**
    * 🎯 BONUS CHALLENGES:
-   * 
+   *
    * 1. Add form data persistence across steps (localStorage)
    * 2. Implement address validation with external API
    * 3. Add credit card validation with Luhn algorithm

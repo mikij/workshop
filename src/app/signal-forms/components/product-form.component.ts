@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { form, required, email, minLength, min, max } from '@angular/forms/signals';
+import { form, required, email, minLength, min, max, Control, submit } from '@angular/forms/signals';
 import { Product } from '../../shared/models/product.model';
 import { Category } from '../../shared/models/category.model';
 import { ProductService } from '../../shared/services/product.service';
@@ -40,7 +40,7 @@ interface ProductFormData {
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, Control],
   template: `
     <div class="product-form-container">
       <h2>🛍️ Product Management Form</h2>
@@ -48,7 +48,6 @@ interface ProductFormData {
         Create and edit products using Angular Signal Forms with real-time validation
       </p>
 
-      <!-- TODO: Replace with signal-driven form -->
       <form class="product-form" (ngSubmit)="onSubmit()">
         
         <!-- Product Name Field -->
@@ -58,19 +57,25 @@ interface ProductFormData {
             id="name"
             type="text"
             class="form-control"
+            [class.error]="productForm.name().errors().length > 0"
+            [control]="productForm.name"
             placeholder="Enter product name">
           
-          <!-- TODO: Add signal-driven error display -->
-          <div class="error-placeholder">
-            <p>⚠️ TODO: Implement signal-based error display</p>
-            <small>Expected: Show "Product name is required" when empty</small>
-          </div>
+          @if (productForm.name().errors().length > 0 && productForm.name().touched()) {
+            <div class="error-message">
+              {{ getFieldError('name') }}
+            </div>
+          }
         </div>
 
         <!-- Category Selection -->
         <div class="form-group">
           <label for="category">Category *</label>
-          <select id="category" class="form-control">
+          <select 
+            id="category" 
+            class="form-control"
+            [class.error]="productForm.category().errors().length > 0"
+            [control]="productForm.category">
             <option value="">Select a category</option>
             <option value="electronics">Electronics</option>
             <option value="clothing">Clothing</option>
@@ -78,10 +83,11 @@ interface ProductFormData {
             <option value="home">Home & Garden</option>
           </select>
           
-          <!-- TODO: Add category validation -->
-          <div class="error-placeholder">
-            <p>⚠️ TODO: Implement category selection validation</p>
-          </div>
+          @if (productForm.category().errors().length > 0 && productForm.category().touched()) {
+            <div class="error-message">
+              {{ getFieldError('category') }}
+            </div>
+          }
         </div>
 
         <!-- Price Field -->
@@ -95,14 +101,16 @@ interface ProductFormData {
               step="0.01"
               min="0"
               class="form-control"
+              [class.error]="productForm.price().errors().length > 0"
+              [control]="productForm.price"
               placeholder="0.00">
           </div>
           
-          <!-- TODO: Add price validation (positive number) -->
-          <div class="error-placeholder">
-            <p>⚠️ TODO: Implement price validation</p>
-            <small>Expected: Price must be positive number</small>
-          </div>
+          @if (productForm.price().errors().length > 0 && productForm.price().touched()) {
+            <div class="error-message">
+              {{ getFieldError('price') }}
+            </div>
+          }
         </div>
 
         <!-- Description Field -->
@@ -111,15 +119,22 @@ interface ProductFormData {
           <textarea 
             id="description"
             class="form-control"
+            [class.error]="productForm.description().errors().length > 0"
+            [control]="productForm.description"
             rows="4"
             placeholder="Describe the product..."
             maxlength="500"></textarea>
           
           <!-- Character count with signals -->
           <div class="form-help">
-            <!-- TODO: Add signal-driven character counter -->
-            <small>⚠️ TODO: Show character count (0/500)</small>
+            <small>Characters: {{ characterCount() }}/500</small>
           </div>
+
+          @if (productForm.description().errors().length > 0 && productForm.description().touched()) {
+            <div class="error-message">
+              {{ getFieldError('description') }}
+            </div>
+          }
         </div>
 
         <!-- In Stock Toggle -->
@@ -128,7 +143,8 @@ interface ProductFormData {
             <input 
               id="inStock"
               type="checkbox"
-              class="checkbox">
+              class="checkbox"
+              [control]="productForm.inStock">
             <label for="inStock">Product is in stock</label>
           </div>
         </div>
@@ -140,24 +156,29 @@ interface ProductFormData {
             id="imageUrl"
             type="url"
             class="form-control"
+            [control]="productForm.imageUrl"
             placeholder="https://example.com/product-image.jpg">
           
           <!-- Image Preview -->
-          <!-- TODO: Add conditional image preview -->
-          <div class="image-preview-placeholder">
-            <p>⚠️ TODO: Add image preview when URL is valid</p>
-          </div>
+          @if (hasValidImageUrl()) {
+            <div class="image-preview">
+              <img [src]="productForm.imageUrl().value()" alt="Product preview" class="preview-image">
+            </div>
+          }
         </div>
 
         <!-- Form Actions -->
         <div class="form-actions">
-          <!-- TODO: Implement proper form state management -->
           <button 
             type="submit"
             class="btn btn-primary"
-            disabled>
-            <!-- TODO: Add loading state with signals -->
-            Save Product
+            [disabled]="!isFormValid() || productForm().submitting()">
+            @if (productForm().submitting()) {
+              <span class="loading-spinner"></span>
+              Saving...
+            } @else {
+              Save Product
+            }
           </button>
           
           <button 
@@ -173,25 +194,34 @@ interface ProductFormData {
       <div class="debug-panel">
         <h4>🔍 Form State (Debug)</h4>
         <div class="debug-content">
-          <!-- TODO: Add signal-driven form state display -->
-          <div class="debug-placeholder">
-            <p>⚠️ TODO: Implement form state debugging</p>
-            <ul>
-              <li>Form Valid: <code>unknown</code></li>
-              <li>Form Touched: <code>unknown</code></li>
-              <li>Form Dirty: <code>unknown</code></li>
-              <li>Submitting: <code>unknown</code></li>
-            </ul>
-          </div>
+          <ul>
+            <li>Form Valid: <code>{{ isFormValid() }}</code></li>
+            <li>Form Touched: <code>{{ isFormTouched() }}</code></li>
+            <li>Form Dirty: <code>{{ isFormDirty() }}</code></li>
+            <li>Submitting: <code>{{ productForm().submitting() }}</code></li>
+            <li>Description Length: <code>{{ characterCount() }}</code></li>
+          </ul>
+          
+          <details>
+            <summary>Form Values</summary>
+            <pre>{{ productForm().value() | json }}</pre>
+          </details>
         </div>
       </div>
 
       <!-- Success/Error Messages -->
       <div class="message-area">
-        <!-- TODO: Add signal-driven success/error messages -->
-        <div class="message-placeholder">
-          <p>⚠️ TODO: Implement success/error message display</p>
-        </div>
+        @if (successMessage()) {
+          <div class="success-message">
+            {{ successMessage() }}
+          </div>
+        }
+        
+        @if (errorMessage()) {
+          <div class="error-message">
+            {{ errorMessage() }}
+          </div>
+        }
       </div>
     </div>
   `,
@@ -396,6 +426,71 @@ interface ProductFormData {
       min-height: 60px;
     }
 
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .form-control.error {
+      border-color: #dc3545;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .image-preview {
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      background: #f8f9fa;
+    }
+
+    .preview-image {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .debug-panel details {
+      margin-top: 1rem;
+    }
+
+    .debug-panel pre {
+      background: #f1f3f4;
+      padding: 0.75rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      overflow-x: auto;
+    }
+
     @media (max-width: 768px) {
       .product-form-container {
         padding: 1rem;
@@ -440,24 +535,42 @@ export class ProductFormComponent {
    * );
    */
   
-  // Placeholder signals - TODO: Replace with signal form
+  // Signal Form Implementation
+  productForm = form(
+    signal<ProductFormData>({
+      name: '',
+      category: '',
+      price: 0,
+      description: '',
+      inStock: true,
+      imageUrl: ''
+    }),
+    (f) => {
+      // Basic validation rules
+      required(f.name);
+      required(f.category);
+      required(f.price);
+      min(f.price, 0.01);
+      minLength(f.description, 10);
+    }
+  );
+
+  // Form state signals
   isSubmitting = signal(false);
   successMessage = signal<string | null>(null);
   errorMessage = signal<string | null>(null);
   
-  /**
-   * 🎯 WORKSHOP TASK 1.2: IMPLEMENT COMPUTED PROPERTIES
-   * 
-   * Create computed properties for form state:
-   * - isFormValid: computed(() => this.productForm().valid())
-   * - isFormTouched: computed(() => this.productForm().touched())
-   * - characterCount: computed(() => this.productForm.description().value().length)
-   */
+  // Computed properties for form state
+  isFormValid = computed(() => this.productForm().valid());
+  isFormTouched = computed(() => this.productForm().touched());
+  isFormDirty = computed(() => this.productForm().dirty());
+  characterCount = computed(() => this.productForm.description().value().length);
   
-  // Placeholder computeds - TODO: Implement real computeds
-  isFormValid = computed(() => false);
-  isFormTouched = computed(() => false);
-  characterCount = computed(() => 0);
+  // Image preview computed
+  hasValidImageUrl = computed(() => {
+    const url = this.productForm.imageUrl().value();
+    return url && url.startsWith('http') && (url.includes('.jpg') || url.includes('.png') || url.includes('.gif'));
+  });
 
   /**
    * 🎯 WORKSHOP TASK 1.3: IMPLEMENT FORM SUBMISSION
@@ -478,16 +591,30 @@ export class ProductFormComponent {
    * }
    */
   async onSubmit() {
-    // TODO: Implement signal form submission
-    console.log('🚧 TODO: Implement form submission with signal forms');
-    
-    // Placeholder implementation
-    this.isSubmitting.set(true);
-    
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-      this.errorMessage.set('TODO: Implement actual form submission');
-    }, 1000);
+    await submit(this.productForm, async (form: any) => {
+      this.successMessage.set(null);
+      this.errorMessage.set(null);
+      
+      try {
+        const productData = form().value();
+        
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Simulate random success/error for demo
+        if (Math.random() > 0.2) {
+          this.successMessage.set('✅ Product created successfully!');
+          this.resetForm();
+        } else {
+          throw new Error('Server validation failed');
+        }
+        
+        return []; // No errors
+      } catch (error) {
+        this.errorMessage.set('❌ Failed to create product. Please try again.');
+        return []; // Handle errors in UI, not form validation
+      }
+    });
   }
 
   /**
@@ -496,10 +623,7 @@ export class ProductFormComponent {
    * Implement proper form reset functionality using signals
    */
   resetForm() {
-    // TODO: Reset the signal form
-    console.log('🚧 TODO: Reset signal form');
-    
-    // Clear messages
+    this.productForm().reset();
     this.successMessage.set(null);
     this.errorMessage.set(null);
   }
@@ -525,9 +649,36 @@ export class ProductFormComponent {
    *   }
    * }
    */
-  getFieldError(fieldName: string): string | null {
-    // TODO: Implement field error retrieval
-    return `TODO: Get ${fieldName} validation errors`;
+  getFieldError(fieldName: keyof ProductFormData): string | null {
+    const field = this.productForm[fieldName];
+    const errors = field().errors();
+    
+    if (errors.length === 0) return null;
+    
+    // Return appropriate error message based on error type
+    const error = errors[0];
+    switch (error.kind) {
+      case 'required': 
+        return `${this.getFieldDisplayName(fieldName)} is required`;
+      case 'min': 
+        return `${this.getFieldDisplayName(fieldName)} must be greater than ${(error as any).min}`;
+      case 'minLength':
+        return `${this.getFieldDisplayName(fieldName)} must be at least ${(error as any).minLength} characters`;
+      default: 
+        return error.message || 'Invalid value';
+    }
+  }
+
+  private getFieldDisplayName(fieldName: keyof ProductFormData): string {
+    const displayNames: Record<keyof ProductFormData, string> = {
+      name: 'Product name',
+      category: 'Category',
+      price: 'Price',
+      description: 'Description',
+      inStock: 'In stock',
+      imageUrl: 'Image URL'
+    };
+    return displayNames[fieldName];
   }
 
   /**
