@@ -53,6 +53,13 @@ export class App {
       description: 'inject() Patterns',
       difficulty: 'Advanced',
       topics: ['inject()', 'Provider Functions', 'Testing', 'Composition']
+    },
+    { 
+      path: '/signal-forms', 
+      name: 'Signal Forms', 
+      description: 'Experimental Signal-Based Forms',
+      difficulty: 'Advanced',
+      topics: ['form()', 'Custom Controls', 'Validation', 'submit()']
     }
   ];
 }

@@ -37,6 +37,11 @@ export const routes: Routes = [
     title: 'Modern DI - inject() Patterns and Advanced Providers'
   },
   {
+    path: 'signal-forms',
+    loadChildren: () => import('./signal-forms/signal-forms.routes').then(m => m.signalFormsRoutes),
+    title: 'Signal Forms Workshop - Angular Shopping Cart'
+  },
+  {
     path: '**',
     redirectTo: '/basic'
   }
